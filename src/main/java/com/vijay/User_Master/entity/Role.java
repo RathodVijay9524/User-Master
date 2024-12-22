@@ -24,6 +24,9 @@ public class Role extends BaseModel {
     @Column(nullable = false, unique = true)
     private String name;
 
+    private boolean isActive;
+    private boolean isDeleted;
+
     @ManyToMany(mappedBy = "roles") // Define the inverse relationship
     private Set<User> users;
 }
