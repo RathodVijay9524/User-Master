@@ -4,6 +4,7 @@ import com.vijay.User_Master.dto.UserRequest;
 import com.vijay.User_Master.dto.UserResponse;
 import com.vijay.User_Master.entity.Role;
 import com.vijay.User_Master.entity.User;
+import com.vijay.User_Master.exceptions.ResourceNotFoundException;
 import com.vijay.User_Master.exceptions.UserAlreadyExistsException;
 import com.vijay.User_Master.repository.RoleRepository;
 import com.vijay.User_Master.repository.UserRepository;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
 @Service
 @AllArgsConstructor
 @Log4j2
@@ -73,17 +76,63 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public CompletableFuture<UserResponse> getById(Long aLong) {
-        return null;
+        return CompletableFuture.supplyAsync(() -> {
+            User user = userRepository.findById(aLong)
+                    .orElseThrow(() -> {
+                        log.error("User with ID '{}' not found", aLong);
+                        return new ResourceNotFoundException("USER", "ID", aLong);
+                    });
+            return mapper.map(user, UserResponse.class);
+        });
     }
+
 
     @Override
     public CompletableFuture<Set<UserResponse>> getAll() {
-        return null;
+        return CompletableFuture.supplyAsync(() ->
+                userRepository.findAll().stream()
+                        .map(user -> mapper.map(user, UserResponse.class))
+                        .collect(Collectors.toSet())
+        );
     }
 
     @Override
-    public CompletableFuture<UserResponse> update(Long aLong, UserRequest request) {
-        return null;
+    public CompletableFuture<UserResponse> update(Long id, UserRequest request) {
+        return CompletableFuture.supplyAsync(() -> {
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("USER", "ID", id));
+
+            // Update user fields only if they are provided in the request
+            if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
+                if (userRepository.existsByUsername(request.getUsername())) {
+                    throw new UserAlreadyExistsException("Username is already taken");
+                }
+                user.setUsername(request.getUsername());
+            }
+
+            if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+                if (userRepository.existsByEmail(request.getEmail())) {
+                    throw new UserAlreadyExistsException("Email is already in use");
+                }
+                user.setEmail(request.getEmail());
+            }
+
+            if (request.getRoles() != null && !request.getRoles().isEmpty()) {
+                Set<Role> roles = request.getRoles().stream()
+                        .map(roleName -> roleRepository.findByName(String.valueOf(roleName))
+                                .orElseThrow(() -> new RuntimeException("Role not found with name: " + roleName)))
+                        .collect(Collectors.toSet());
+                user.setRoles(roles);
+            }
+
+            if (request.getPassword() != null) {
+                user.setPassword(passwordEncoder.encode(request.getPassword()));
+            }
+
+            // Save the updated user in the repository
+            userRepository.save(user);
+            return mapper.map(user, UserResponse.class);
+        });
     }
 
     @Override

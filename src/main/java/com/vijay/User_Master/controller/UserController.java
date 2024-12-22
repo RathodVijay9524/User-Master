@@ -7,11 +7,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -38,6 +36,53 @@ public class UserController {
                     // Log error if any exception occurs during user creation
                     log.error("Error during user creation: {}", ex.getMessage());
                     return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+                });
+    }
+
+    /**
+     * Update an existing user by ID
+     *
+     * @param id      The ID of the user to update
+     * @param request The new data for the user
+     * @return A CompletableFuture containing the updated user
+     */
+    @PutMapping("/{id}")
+    public CompletableFuture<ResponseEntity<UserResponse>> updateUser(
+            @PathVariable Long id,
+            @RequestBody  UserRequest request) {
+        log.info("Received request to update user with ID: {}", id);
+        return userService.update(id, request)
+                .thenApply(response -> ResponseEntity.ok(response));
+    }
+
+    /**
+     * Get user by ID
+     *
+     * @param id The ID of the user to fetch
+     * @return A CompletableFuture containing the user details
+     */
+    @GetMapping("/{id}")
+    public CompletableFuture<ResponseEntity<UserResponse>> getUserById(@PathVariable Long id) {
+        log.info("Received request to fetch user with ID: {}", id);
+
+        return userService.getById(id)
+                .thenApply(response -> ResponseEntity.ok(response));
+    }
+
+    /**
+     * Get all users
+     *
+     * @return A CompletableFuture containing a set of all user details
+     */
+    @GetMapping
+    public CompletableFuture<ResponseEntity<Set<UserResponse>>> getAllUsers() {
+        log.info("Received request to fetch all users");
+
+        return userService.getAll()
+                .thenApply(users -> ResponseEntity.ok(users))
+                .exceptionally(ex -> {
+                    log.error("Error fetching all users: {}", ex.getMessage());
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
                 });
     }
 
