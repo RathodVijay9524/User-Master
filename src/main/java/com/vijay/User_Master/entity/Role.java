@@ -15,7 +15,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Entity
 @Table(name = "roles")
-public class Role {
+public class Role extends BaseModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
