@@ -10,7 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.server.SecurityWebFilterChain;
+
 
 @Configuration
 @EnableWebSecurity
@@ -18,9 +18,11 @@ public class WebSecurityConfig {
 
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable())  // Disable CSRF
                 .authorizeHttpRequests(
-                        request -> request.anyRequest().authenticated()
+                        request -> request
+                                .requestMatchers("/api/users/**").hasRole("ADMIN")
+                                .anyRequest().authenticated()
                 ).formLogin(Customizer.withDefaults());
 
         return http.build();
