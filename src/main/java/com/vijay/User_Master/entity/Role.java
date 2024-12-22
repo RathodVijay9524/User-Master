@@ -1,6 +1,9 @@
 package com.vijay.User_Master.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,6 +22,8 @@ import java.util.Set;
 @EntityListeners(AuditingEntityListener.class)
 public class Role extends BaseModel {
 
+
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,6 +34,13 @@ public class Role extends BaseModel {
     private boolean isActive;
     private boolean isDeleted;
 
-    @ManyToMany(mappedBy = "roles") // Define the inverse relationship
+    @ManyToMany(mappedBy = "roles",fetch = FetchType.LAZY) // Define the inverse relationship
+    @JsonBackReference
     private Set<User> users;
+
+    // Constructor with @JsonCreator to create Role from a string
+    @JsonCreator
+    public Role(@JsonProperty("name") String name) {
+        this.name = name;
+    }
 }
