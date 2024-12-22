@@ -1,6 +1,6 @@
 package com.vijay.User_Master.service.impl;
 
-import com.vijay.User_Master.dto.UserRespons;
+import com.vijay.User_Master.dto.UserResponse;
 import com.vijay.User_Master.repository.RoleRepository;
 import com.vijay.User_Master.repository.UserRepository;
 import com.vijay.User_Master.service.UserService;
@@ -22,17 +22,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CompletableFuture<UserRespons> getById(Long aLong) {
+    public CompletableFuture<UserResponse> getById(Long aLong) {
         return null;
     }
 
     @Override
-    public CompletableFuture<Set<UserRespons>> getAll() {
+    public CompletableFuture<Set<UserResponse>> getAll() {
         return null;
     }
 
     @Override
-    public CompletableFuture<UserRespons> update(Long aLong, UserService request) {
+    public CompletableFuture<UserResponse> update(Long aLong, UserService request) {
         return null;
     }
 
