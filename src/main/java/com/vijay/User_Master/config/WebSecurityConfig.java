@@ -12,10 +12,12 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 public class WebSecurityConfig {
 
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(
-                request -> request.anyRequest().authenticated()
-        ).formLogin(Customizer.withDefaults())
-                .httpBasic(Customizer.withDefaults());
+        http
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(
+                   request -> request.anyRequest().authenticated()
+        ).formLogin(Customizer.withDefaults());
+
         return http.build();
     }
 }
