@@ -48,16 +48,17 @@ public class UserServiceImpl implements UserService {
             User user = mapper.map(request, User.class);
             // Encode password before saving
             user.setPassword(passwordEncoder.encode(request.getPassword()));
-            user.setActive(true);
+
 
             // Assign the default role (USER)
-            Role role = roleRepository.findByName("USER")
+            Role role = roleRepository.findByName("ROLE_USER")
                     .orElseThrow(() -> {
                         log.error("Role 'USER' not found");
                         return new RuntimeException("Role Not found with Name");
                     });
             user.setRoles(Set.of(role));
 
+            user.setActive(true);
             // Save the user in the repository
             userRepository.save(user);
 

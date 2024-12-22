@@ -9,6 +9,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -17,32 +19,36 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class WebSecurityConfig {
 
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())  // Disable CSRF
-                .authorizeHttpRequests(
-                        request -> request
-                                // Make POST requests to /api/roles and /api/users publicly accessible
-                                .requestMatchers(HttpMethod.POST, "/api/roles/**").permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/users/**").permitAll()
-                                .requestMatchers("/api/users/**").hasRole("ADMIN")
-                                .requestMatchers("/api/roles/**").hasRole("ADMIN")
-                                .anyRequest().authenticated()
-                ).formLogin(Customizer.withDefaults());
+        http.csrf(csrf->csrf.disable())
+                .authorizeHttpRequests(request ->{
+                    request.requestMatchers(HttpMethod.GET, "/api/**").permitAll(); // public
+                    request.anyRequest().authenticated();
+                }).httpBasic(Customizer.withDefaults());
 
         return http.build();
     }
 
     @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
+    }
+    @Bean
     public UserDetailsService userDetailsService() {
-        UserDetails vijay= User.withUsername("vijay")
-                .password("{noop}password")
-                .roles("USER")
-                .build();
-        UserDetails ajay= User.withUsername("ajay")
-                .password("{noop}password")
+        UserDetails admin = User.builder()
+                .username("admin")
+                .password(passwordEncoder().encode("admin"))
                 .roles("ADMIN")
                 .build();
-        return new InMemoryUserDetailsManager(vijay,ajay);
+
+        UserDetails seller = User.builder()
+                .username("seller")
+                .password(passwordEncoder().encode("seller"))
+                .roles("SELLER")
+                .build();
+
+        return new InMemoryUserDetailsManager(admin, seller);
     }
+
 }

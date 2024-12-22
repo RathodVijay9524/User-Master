@@ -21,6 +21,7 @@ public class RoleServiceImpl implements RoleService {
     public CompletableFuture<RoleResponse> create(RoleRequest request) {
         return CompletableFuture.supplyAsync(()->{
             Role role = mapper.map(request, Role.class);
+            role.setActive(true);
             roleRepository.save(role);
             return mapper.map(role,RoleResponse.class);
         });
