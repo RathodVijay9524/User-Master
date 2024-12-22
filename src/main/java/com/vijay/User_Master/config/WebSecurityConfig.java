@@ -2,6 +2,7 @@ package com.vijay.User_Master.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -21,7 +22,11 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())  // Disable CSRF
                 .authorizeHttpRequests(
                         request -> request
+                                // Make POST requests to /api/roles and /api/users publicly accessible
+                                .requestMatchers(HttpMethod.POST, "/api/roles/**").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/users/**").permitAll()
                                 .requestMatchers("/api/users/**").hasRole("ADMIN")
+                                .requestMatchers("/api/roles/**").hasRole("ADMIN")
                                 .anyRequest().authenticated()
                 ).formLogin(Customizer.withDefaults());
 
