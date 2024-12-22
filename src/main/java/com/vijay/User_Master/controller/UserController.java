@@ -1,10 +1,12 @@
 package com.vijay.User_Master.controller;
 
+import com.vijay.User_Master.Helper.ExceptionUtil;
 import com.vijay.User_Master.dto.UserRequest;
 import com.vijay.User_Master.dto.UserResponse;
 import com.vijay.User_Master.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.tomcat.util.http.ResponseUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +24,7 @@ public class UserController {
 
     // Endpoint to create a new user
     @PostMapping
-    public CompletableFuture<ResponseEntity<UserResponse>> createUser(@RequestBody UserRequest userRequest) {
+    public CompletableFuture<ResponseEntity<?>> createUser(@RequestBody UserRequest userRequest) {
         log.info("Received request to create user with username: {}", userRequest.getUsername());
 
         // Call the service to create the user asynchronously
@@ -30,13 +32,9 @@ public class UserController {
                 .thenApply(userResponse -> {
                     // Log successful creation and return the response
                     log.info("User created successfully with username: {}", userResponse.getUsername());
-                    return new ResponseEntity<>(userResponse, HttpStatus.CREATED);
-                })
-                .exceptionally(ex -> {
-                    // Log error if any exception occurs during user creation
-                    log.error("Error during user creation: {}", ex.getMessage());
-                    return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+                    return ExceptionUtil.createBuildResponse(userResponse, HttpStatus.CREATED);
                 });
+
     }
 
     /**
@@ -47,12 +45,13 @@ public class UserController {
      * @return A CompletableFuture containing the updated user
      */
     @PutMapping("/{id}")
-    public CompletableFuture<ResponseEntity<UserResponse>> updateUser(
+    public CompletableFuture<ResponseEntity<?>> updateUser(
             @PathVariable Long id,
-            @RequestBody  UserRequest request) {
+            @RequestBody UserRequest request) {
         log.info("Received request to update user with ID: {}", id);
         return userService.update(id, request)
-                .thenApply(response -> ResponseEntity.ok(response));
+                .thenApply(response -> ExceptionUtil.createBuildResponse(response, HttpStatus.OK));
+
     }
 
     /**
@@ -62,11 +61,12 @@ public class UserController {
      * @return A CompletableFuture containing the user details
      */
     @GetMapping("/{id}")
-    public CompletableFuture<ResponseEntity<UserResponse>> getUserById(@PathVariable Long id) {
+    public CompletableFuture<ResponseEntity<?>> getUserById(@PathVariable Long id) {
         log.info("Received request to fetch user with ID: {}", id);
 
         return userService.getById(id)
-                .thenApply(response -> ResponseEntity.ok(response));
+                .thenApply(response -> ExceptionUtil.createBuildResponse(response, HttpStatus.OK));
+
     }
 
     /**
@@ -75,16 +75,11 @@ public class UserController {
      * @return A CompletableFuture containing a set of all user details
      */
     @GetMapping
-    public CompletableFuture<ResponseEntity<Set<UserResponse>>> getAllUsers() {
+    public CompletableFuture<ResponseEntity<?>> getAllUsers() {
         log.info("Received request to fetch all users");
 
         return userService.getAll()
-                .thenApply(users -> ResponseEntity.ok(users))
-                .exceptionally(ex -> {
-                    log.error("Error fetching all users: {}", ex.getMessage());
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-                });
+                .thenApply(users -> ExceptionUtil.createBuildResponse(users, HttpStatus.OK));
+
     }
-
-
 }

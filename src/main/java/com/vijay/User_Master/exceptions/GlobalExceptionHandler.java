@@ -1,82 +1,88 @@
 package com.vijay.User_Master.exceptions;
 
+import com.vijay.User_Master.Helper.ExceptionUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
     // Handler for UserAlreadyExistsException (specific to user creation)
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<?> handleUserAlreadyExistsException(UserAlreadyExistsException ex, WebRequest request) {
-        ErrorDetails errorDetails = new ErrorDetails(
-                HttpStatus.BAD_REQUEST,
-                "error",
+        // Log the exception details
+        logger.error("User already exists: {}", ex.getMessage(), ex);
+        // Create and return the error response using ExceptionUtil
+        return ExceptionUtil.createErrorResponseMessage(
                 ex.getMessage(),
-                "Username or email already exists",
-                LocalDateTime.now()
+                HttpStatus.BAD_REQUEST
         );
-        return errorDetails.create();
     }
 
-    // Handler for ResourceNotFoundException
+    // Logger instance for the class
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    // Handle Resource Not Found Exception
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<?> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
-        ErrorDetails errorDetails = new ErrorDetails(
-                HttpStatus.NOT_FOUND,
-                "error",
-                ex.getMessage(),
-                String.format("Resource: %s, Field: %s, Value: %s",
-                        ex.getResourceName(),
-                        ex.getFieldName(),
-                        ex.getFieldValue()),
-                LocalDateTime.now()
-        );
-        return errorDetails.create();
+    public ResponseEntity<?> handleResourceNotFound(ResourceNotFoundException ex) {
+        // Log the exception details
+        logger.error("Resource not found: {}", ex.getMessage(), ex);
+
+        // Return the error response
+        return ExceptionUtil.createErrorResponseMessage(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
-    // Handler for NoSuchElementException (e.g., when role or other elements are not found)
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<?> handleNoSuchElementException(NoSuchElementException ex, WebRequest request) {
-        ErrorDetails errorDetails = new ErrorDetails(
-                HttpStatus.NOT_FOUND,
-                "error",
-                "Resource not found",
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-        return errorDetails.create();
+    // Handle Validation Exceptions (e.g., @Valid errors)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException ex) {
+        // Log the validation errors
+        logger.error("Validation error: {}", ex.getMessage(), ex);
+
+        // Extract field errors into a map for cleaner response
+        Map<String, String> validationErrors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                validationErrors.put(error.getField(), error.getDefaultMessage()));
+
+        // Return the validation errors response
+        return ExceptionUtil.createErrorResponse(validationErrors, HttpStatus.BAD_REQUEST);
     }
 
-    // General RuntimeException handler for unexpected exceptions
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<?> handleRuntimeException(RuntimeException ex, WebRequest request) {
-        ErrorDetails errorDetails = new ErrorDetails(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "error",
-                "Internal server error",
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-        return errorDetails.create();
-    }
-
-    // General Exception handler for all other exceptions
+    // Handle Generic Exceptions (catch-all for unhandled exceptions)
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleException(Exception ex, WebRequest request) {
-        ErrorDetails errorDetails = new ErrorDetails(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "error",
-                "An unexpected error occurred",
-                ex.getMessage(),
-                LocalDateTime.now()
-        );
-        return errorDetails.create();
+    public ResponseEntity<?> handleGlobalException(Exception ex) {
+        // Log the unexpected error
+        logger.error("Unexpected error occurred: {}", ex.getMessage(), ex);
+
+        // Return the generic error response
+        return ExceptionUtil.createErrorResponseMessage("An unexpected error occurred: " + ex.getMessage(),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(NullPointerException.class)
+    public ResponseEntity<?> handleNullPointerException(Exception e) {
+        logger.error("GlobalExceptionHandler :: handleNullPointerException ::", e.getMessage());
+        // return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        return ExceptionUtil.createErrorResponseMessage(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    //handle bad api exception
+    @ExceptionHandler(BadApiRequestException.class)
+    public ResponseEntity<?> handleBadApiRequest(BadApiRequestException ex) {
+        logger.info("Bad api request");
+        return ExceptionUtil.createErrorResponseMessage(ex.getMessage(), HttpStatus.BAD_REQUEST);
+
     }
 }
+
 
