@@ -1,5 +1,8 @@
 package com.vijay.User_Master.service.impl;
 
+import com.vijay.User_Master.config.security.JwtTokenProvider;
+import com.vijay.User_Master.config.security.model.LoginJWTResponse;
+import com.vijay.User_Master.config.security.model.LoginRequest;
 import com.vijay.User_Master.dto.UserRequest;
 import com.vijay.User_Master.dto.UserResponse;
 import com.vijay.User_Master.entity.Role;
@@ -12,6 +15,12 @@ import com.vijay.User_Master.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +37,9 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper mapper;
+    private UserDetailsService userDetailsService;
+    private JwtTokenProvider jwtTokenProvider;
+    private AuthenticationManager authenticationManager;
 
     @Override
     public CompletableFuture<UserResponse> create(UserRequest request) {
@@ -140,4 +152,23 @@ public class UserServiceImpl implements UserService {
         return null;
     }
 
+    @Override
+    public LoginJWTResponse login(LoginRequest req) {
+        Authentication authentication = authenticationManager
+                .authenticate(new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword()));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(req.getUsername());
+
+        String token = jwtTokenProvider.generateToken(authentication);
+
+        UserResponse response = mapper.map(userDetails, UserResponse.class);
+
+
+        LoginJWTResponse jwtResponse = LoginJWTResponse.builder()
+                .jwtToken(token)
+                .user(response).build();
+
+        return jwtResponse;
+    }
 }
