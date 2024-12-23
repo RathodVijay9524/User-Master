@@ -19,6 +19,9 @@ import java.util.NoSuchElementException;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Logger instance for the class
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException ex) {
@@ -38,15 +41,11 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // Logger instance for the class
-    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
-
     // Handle Resource Not Found Exception
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> handleResourceNotFound(ResourceNotFoundException ex) {
         // Log the exception details
         logger.error("Resource not found: {}", ex.getMessage(), ex);
-
         // Return the error response
         return ExceptionUtil.createErrorResponseMessage(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
