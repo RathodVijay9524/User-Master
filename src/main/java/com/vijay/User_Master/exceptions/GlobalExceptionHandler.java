@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -17,6 +18,13 @@ import java.util.NoSuchElementException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException ex) {
+        logger.error("Bad credentials for user: {}", ex.getMessage(), ex);
+        return ExceptionUtil.createErrorResponseMessage("Incorrect username or password", HttpStatus.UNAUTHORIZED);
+    }
 
     // Handler for UserAlreadyExistsException (specific to user creation)
     @ExceptionHandler(UserAlreadyExistsException.class)
