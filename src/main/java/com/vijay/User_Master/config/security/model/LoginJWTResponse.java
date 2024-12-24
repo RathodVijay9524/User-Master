@@ -2,10 +2,11 @@ package com.vijay.User_Master.config.security.model;
 
 import com.vijay.User_Master.dto.UserResponse;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import com.vijay.User_Master.entity.Role;
+import com.vijay.User_Master.entity.User;
+import lombok.*;
+
+import java.util.Set;
 
 @Getter
 @Builder
@@ -15,5 +16,6 @@ public class LoginJWTResponse {
 
     private String jwtToken;
     private UserResponse user;
+
 
 }

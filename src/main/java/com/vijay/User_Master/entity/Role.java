@@ -34,13 +34,4 @@ public class Role extends BaseModel {
     private boolean isActive;
     private boolean isDeleted;
 
-    @ManyToMany(mappedBy = "roles",fetch = FetchType.LAZY) // Define the inverse relationship
-    @JsonBackReference
-    private Set<User> users;
-
-    // Constructor with @JsonCreator to create Role from a string
-    @JsonCreator
-    public Role(@JsonProperty("name") String name) {
-        this.name = name;
-    }
 }
