@@ -37,7 +37,8 @@ public class UserMasterApplication {
 
     @PostConstruct
     protected void init() {
-
+// you are running first time application then this method un-comments this.
+        // getCurrentAuditor() and comment another
         if (userRepository.count() == 0 && workerRepository.count() == 0) {
 
             // Ensure roles are created and saved before assigning
