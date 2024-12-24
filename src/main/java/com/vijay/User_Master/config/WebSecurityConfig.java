@@ -41,6 +41,7 @@ public class WebSecurityConfig {
                         //authorize.anyRequest().authenticated()
                         authorize.requestMatchers( "/api/users/**").permitAll()
                                 .requestMatchers("/api/auth/**").permitAll()
+                                .requestMatchers("/api/auth/register/**").permitAll()
                                 .anyRequest().authenticated()
 
                 ).exceptionHandling( exception -> exception
