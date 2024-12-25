@@ -27,10 +27,6 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/unlock")
-    public ResponseEntity<Boolean> unlockAccount(@RequestBody UnlockForm form) {
-        return ResponseEntity.ok(authService.unlockAccount(form));
-    }
 
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordForm form) {

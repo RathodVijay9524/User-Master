@@ -59,20 +59,47 @@ public class AuthServiceImpl implements AuthService {
     private EmailUtils emailUtils;
     private EmailService emailService;
 
-
+/*
+*     **************  when user register that time need to send temp password
+*                 to unlock account in email then user can create new password and he or see can log in. *****
+*
+*        but in this application we are verifier user direct when he clicks on link... inside mail
+*        so this method implemented for knowledge
+*
+* */
     @Override
-    public boolean unlockAccount(UnlockForm form) {
-        User user = userRepository.findByEmail(form.getEmail());
-        if (user != null && passwordEncoder.matches(form.getNewPassword(), user.getPassword())) {
-            user.setPassword(passwordEncoder.encode(form.getNewPassword()));
-            userRepository.save(user);
-            String subject = "Congratulations! Your Account is Unlocked";
-            String body = "Your account has been successfully unlocked. You can now log in with your new password.<br>Thank you.";
-            emailUtils.sendEmail(user.getEmail(), subject, body);
-            return true;
-        } else {
-            return false;
+    public boolean unlockAccount(UnlockForm form, String usernameOrEmail) {
+        User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
+                .orElseThrow(() -> {
+                    log.error("User with ID '{}' not found", usernameOrEmail);
+                    return new ResourceNotFoundException("USER", "ID", usernameOrEmail);
+                });
+        // Check if the temporary password matches the user's current password
+        if (!passwordEncoder.matches(form.getTempPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Temporary Password is incorrect");
         }
+        // Ensure new password and confirm password match
+        if (!form.getNewPassword().equals(form.getConfirmPassword())) {
+            throw new IllegalArgumentException("New Password and Confirm Password do not match");
+        }
+        // Encode the new password and save it
+        user.setPassword(passwordEncoder.encode(form.getNewPassword()));
+
+        /*
+         *   need to set status as unlock or Active, then user can log in
+         * */
+        AccountStatus accountStatus=AccountStatus.builder()
+                .isActive(true)
+                .build();
+        user.setAccountStatus(accountStatus);
+
+        userRepository.save(user);
+        // Send a success email to the user
+        String subject = "Congratulations! Your Account is Unlocked";
+        String body = "Your account has been successfully unlocked. You can now log in with your new password.<br>Thank you.";
+        emailUtils.sendEmail(user.getEmail(), subject, body);
+        log.info("Account unlocked successfully for user ID: {}", user.getName());
+        return true;
     }
 
     @Override
@@ -242,9 +269,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
 }
-
-
-
 
 
 
