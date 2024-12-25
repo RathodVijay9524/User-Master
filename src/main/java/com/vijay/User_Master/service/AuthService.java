@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 
 public interface AuthService {
 
-    boolean unlockAccount(UnlockForm form);
+    boolean unlockAccount(UnlockForm form, String usernameOrEmail);
 
     // For reset password
     boolean forgotPassword(ForgotPasswordForm from, String email);

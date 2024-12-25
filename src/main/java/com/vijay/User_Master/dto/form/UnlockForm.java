@@ -7,8 +7,8 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class UnlockForm {
-    private String email;
     private String tempPassword;
     private String newPassword;
+    private String confirmPassword;
 }
 

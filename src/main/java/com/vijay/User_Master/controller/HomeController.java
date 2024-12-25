@@ -2,6 +2,7 @@ package com.vijay.User_Master.controller;
 
 import com.vijay.User_Master.Helper.ExceptionUtil;
 import com.vijay.User_Master.dto.form.ForgotPasswordForm;
+import com.vijay.User_Master.dto.form.UnlockForm;
 import com.vijay.User_Master.exceptions.ResourceNotFoundException;
 import com.vijay.User_Master.service.AuthService;
 import com.vijay.User_Master.service.HomeService;
@@ -39,6 +40,29 @@ public class HomeController {
         try {
             authService.forgotPassword(form, usernameOrEmail);
             return ExceptionUtil.createBuildResponseMessage("Password reset successfully", HttpStatus.OK);
+        } catch (ResourceNotFoundException e) {
+            return ExceptionUtil.createErrorResponseMessage(e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (IllegalArgumentException e) {
+            return ExceptionUtil.createErrorResponseMessage(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return ExceptionUtil.createErrorResponseMessage("An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // you can reset password using email or username
+    // if he gets temp password on mail then ,user can create new password using temp password
+    //http://localhost:9091/api/v1/home/unlock-account?usernameOrEmail=vijayrathod9524@gmail.com
+
+
+    @PostMapping("/unlock-account")
+    public ResponseEntity<?> unlockAccount(@RequestBody UnlockForm form, @RequestParam String usernameOrEmail) {
+        try {
+            boolean result = authService.unlockAccount(form, usernameOrEmail);
+            if (result) {
+                return ExceptionUtil.createBuildResponseMessage("Account unlocked successfully", HttpStatus.OK);
+            } else {
+                return ExceptionUtil.createErrorResponseMessage("Failed to unlock account", HttpStatus.BAD_REQUEST);
+            }
         } catch (ResourceNotFoundException e) {
             return ExceptionUtil.createErrorResponseMessage(e.getMessage(), HttpStatus.NOT_FOUND);
         } catch (IllegalArgumentException e) {
