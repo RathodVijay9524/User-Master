@@ -32,11 +32,6 @@ public class AuthController {
         return ResponseEntity.ok(authService.unlockAccount(form));
     }
 
-    @PostMapping("/forgot-password")
-    public ResponseEntity<Boolean> forgotPwd(@RequestParam String email) {
-        return ResponseEntity.ok(authService.forgotPassword(email));
-    }
-
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordForm form) {
         boolean result= authService.changePassword(form);

@@ -5,6 +5,7 @@ import com.vijay.User_Master.dto.UserRequest;
 import com.vijay.User_Master.dto.UserResponse;
 import com.vijay.User_Master.entity.Role;
 import com.vijay.User_Master.entity.User;
+import com.vijay.User_Master.exceptions.BadApiRequestException;
 import com.vijay.User_Master.exceptions.ResourceNotFoundException;
 import com.vijay.User_Master.exceptions.UserAlreadyExistsException;
 import com.vijay.User_Master.repository.RoleRepository;
@@ -66,7 +67,7 @@ public class UserServiceImpl implements UserService {
             Role role = roleRepository.findByName("ROLE_USER")
                     .orElseThrow(() -> {
                         log.error("Role 'USER' not found");
-                        return new RuntimeException("Role Not found with Name");
+                        return new BadApiRequestException("Role Not found with Name");
                     });
             user.setRoles(Set.of(role));
 
