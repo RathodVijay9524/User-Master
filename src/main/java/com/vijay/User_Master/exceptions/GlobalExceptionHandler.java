@@ -90,6 +90,20 @@ public class GlobalExceptionHandler {
         return ExceptionUtil.createErrorResponseMessage(ex.getMessage(), HttpStatus.BAD_REQUEST);
 
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException e) {
+        logger.error("GlobalExceptionHandler :: handleException ::", e.getMessage());
+        return ExceptionUtil.createErrorResponseMessage(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<GenericResponse> handleIllegalStateException(IllegalStateException ex) {
+        logger.error("GlobalExceptionHandler :: handleIllegalStateException ::", ex.getMessage());
+        return (ResponseEntity<GenericResponse>) ExceptionUtil.createErrorResponseMessage(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+
 }
 
 
