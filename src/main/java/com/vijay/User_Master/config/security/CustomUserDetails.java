@@ -1,6 +1,7 @@
 package com.vijay.User_Master.config.security;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.vijay.User_Master.entity.AccountStatus;
 import com.vijay.User_Master.entity.Role;
 import com.vijay.User_Master.entity.User;
 import com.vijay.User_Master.entity.Worker;
@@ -25,26 +26,29 @@ public class CustomUserDetails implements UserDetails {
     private String name;
     private String username;
     private String email;
+    @JsonIgnore
     private String password;
     private Set<Role> roles;
-    private boolean isActive;
+    private String phoNo;
     private boolean isDeleted;
     @JsonIgnore
     private List<Worker> workers;
+    private AccountStatus accountStatus;
 
-    public CustomUserDetails(Long id, String name, String username, String email, String password, Set<Role> roles, boolean isActive, boolean isDeleted, List<Worker> workers) {
+    public CustomUserDetails(Long id, String name, String username, String email, String password, Set<Role> roles, String phoNo, boolean isDeleted, List<Worker> workers, AccountStatus accountStatus) {
         this.id = id;
         this.name = name;
         this.username = username;
         this.email = email;
         this.password = password;
         this.roles = roles;
-        this.isActive = isActive;
+        this.phoNo = phoNo;
         this.isDeleted = isDeleted;
         this.workers = workers;
+        this.accountStatus = accountStatus;
     }
 
-    public static CustomUserDetails build(User user){
+    public static CustomUserDetails build(User user) {
         return new CustomUserDetails(
                 user.getId(),
                 user.getName(),
@@ -52,13 +56,14 @@ public class CustomUserDetails implements UserDetails {
                 user.getEmail(),
                 user.getPassword(),
                 user.getRoles(),
-                user.isActive(),
+                user.getPhoNo(),
                 user.isDeleted(),
-                user.getWorkers()
+                user.getWorkers(),
+                user.getAccountStatus()
         );
     }
 
-    public static CustomUserDetails build(Worker worker){
+    public static CustomUserDetails build(Worker worker) {
         return new CustomUserDetails(
                 worker.getId(),
                 worker.getName(),
@@ -66,9 +71,10 @@ public class CustomUserDetails implements UserDetails {
                 worker.getEmail(),
                 worker.getPassword(),
                 worker.getRoles(),
-                worker.isActive(),
+                worker.getPhoNo(),
                 worker.isDeleted(),
-                null // Workers don't have associated workers, so set it to null
+                null, // Workers don't have associated workers, so set it to null
+                worker.getAccountStatus()
         );
     }
 
@@ -89,3 +95,4 @@ public class CustomUserDetails implements UserDetails {
         return username;
     }
 }
+

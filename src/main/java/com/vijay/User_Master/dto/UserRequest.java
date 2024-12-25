@@ -1,5 +1,6 @@
 package com.vijay.User_Master.dto;
 
+import com.vijay.User_Master.entity.AccountStatus;
 import com.vijay.User_Master.entity.Role;
 import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
@@ -16,12 +17,11 @@ import java.util.Set;
 public class UserRequest {
 
     private String name;
-
     private String username;
-
     private String email;
-
     private String password;
+    private String phoNo;
     private Set<String> roles; // Roles are strings like "ROLE_ADMIN"
+    private AccountStatus accountStatus;
 
 }
