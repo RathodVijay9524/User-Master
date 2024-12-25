@@ -15,6 +15,7 @@ import com.vijay.User_Master.entity.AccountStatus;
 import com.vijay.User_Master.entity.Role;
 import com.vijay.User_Master.entity.User;
 import com.vijay.User_Master.entity.Worker;
+import com.vijay.User_Master.exceptions.ResourceNotFoundException;
 import com.vijay.User_Master.exceptions.UserAlreadyExistsException;
 import com.vijay.User_Master.repository.RoleRepository;
 import com.vijay.User_Master.repository.UserRepository;
@@ -57,7 +58,6 @@ public class AuthServiceImpl implements AuthService {
     private EmailService emailService;
 
 
-
     @Override
     public boolean unlockAccount(UnlockForm form) {
         User user = userRepository.findByEmail(form.getEmail());
@@ -95,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public boolean changePassword(ChangePasswordForm form) {
         CustomUserDetails userDetails = CommonUtils.getLoggedInUser();
-        User user= userRepository.findByEmail(userDetails.getEmail());
+        User user = userRepository.findByEmail(userDetails.getEmail());
         // Log the incoming reset password request
         System.out.println("Resetting password for email: " + user.getEmail());
         // Check if the user exists
@@ -103,7 +103,7 @@ public class AuthServiceImpl implements AuthService {
             System.out.println("User not found with email: " + user.getEmail());
             return false;
         }
-        if(!passwordEncoder.matches(form.getOldPassword(),user.getPassword())){
+        if (!passwordEncoder.matches(form.getOldPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Old Password is incorrect ");
         }
         String encodePasswordNewPassword = passwordEncoder.encode(form.getNewPassword());
@@ -129,6 +129,12 @@ public class AuthServiceImpl implements AuthService {
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(req.getUsernameOrEmail());
 
+        User user = userRepository.findByEmail(req.getUsernameOrEmail());
+        if (!user.getAccountStatus().getIsActive()) {
+            log.warn("Account not active for user ID: {}", user.getId());
+            throw new RuntimeException("Account is not active. Please activate your account.");
+        }
+
         String token = jwtTokenProvider.generateToken(authentication);
 
         UserResponse response = mapper.map(userDetails, UserResponse.class);
@@ -142,7 +148,7 @@ public class AuthServiceImpl implements AuthService {
 
 
     @Override
-    public CompletableFuture<Object> registerForAdminUser(UserRequest request, String url)  {
+    public CompletableFuture<Object> registerForAdminUser(UserRequest request, String url) {
         log.info("Attempting to create a new admin user with username: {}", request.getUsername());
         return CompletableFuture.supplyAsync(() -> {
             if (existsByUsernameOrEmail(request.getUsername()) || existsByUsernameOrEmail(request.getEmail())) {
@@ -158,7 +164,7 @@ public class AuthServiceImpl implements AuthService {
             //String tempPwd= PwdUtils.generateRandomPwd();
             //user.setPassword(tempPwd);
             user.setPassword(passwordEncoder.encode(request.getPassword()));
-            AccountStatus accountStatus=AccountStatus.builder()
+            AccountStatus accountStatus = AccountStatus.builder()
                     .isActive(false)
                     .passwordResetToken(null)
                     .verificationCode(UUID.randomUUID().toString())
@@ -171,7 +177,7 @@ public class AuthServiceImpl implements AuthService {
             if (!ObjectUtils.isEmpty(savedUser)) {
                 // send email
                 try {
-                    emailSendForRegister(savedUser,url);
+                    emailSendForRegister(savedUser, url);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
