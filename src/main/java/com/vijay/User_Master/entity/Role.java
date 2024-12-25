@@ -30,7 +30,6 @@ public class Role extends BaseModel {
 
     @Column(nullable = false, unique = true)
     private String name;
-
     private boolean isActive;
     private boolean isDeleted;
 

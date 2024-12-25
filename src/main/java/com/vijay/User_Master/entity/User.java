@@ -32,7 +32,7 @@ public class User  {
     private String email;
     @Column(nullable = false)
     private String password;
-    private boolean isActive;
+    private String phoNo;
     private boolean isDeleted;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -45,5 +45,8 @@ public class User  {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private List<Worker> workers;
 
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "status_id")
+    private AccountStatus accountStatus;
 }
 

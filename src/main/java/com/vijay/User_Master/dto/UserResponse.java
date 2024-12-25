@@ -17,8 +17,9 @@ public class UserResponse {
     private String username;
     private String email;
     private String password;
-    private Set<Role> roles;
-    private boolean isActive;
+    private String phoNo;
     private boolean isDeleted;
+    private Set<Role> roles;
+
 
 }

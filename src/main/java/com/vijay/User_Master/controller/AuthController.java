@@ -7,11 +7,16 @@ import com.vijay.User_Master.config.security.model.LoginJWTResponse;
 import com.vijay.User_Master.config.security.model.LoginRequest;
 import com.vijay.User_Master.dto.UserRequest;
 import com.vijay.User_Master.dto.UserResponse;
+import com.vijay.User_Master.dto.form.ChangePasswordForm;
+
+import com.vijay.User_Master.dto.form.UnlockForm;
 import com.vijay.User_Master.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -21,6 +26,26 @@ import java.util.concurrent.CompletableFuture;
 public class AuthController {
 
     private final AuthService authService;
+
+    @PostMapping("/unlock")
+    public ResponseEntity<Boolean> unlockAccount(@RequestBody UnlockForm form) {
+        return ResponseEntity.ok(authService.unlockAccount(form));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Boolean> forgotPwd(@RequestParam String email) {
+        return ResponseEntity.ok(authService.forgotPassword(email));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordForm form) {
+        boolean result= authService.changePassword(form);
+        if (result) {
+            return ExceptionUtil.createBuildResponseMessage("Password Changed. !!", HttpStatus.OK);
+        } else {
+            return ExceptionUtil.createBuildResponseMessage("Failed to Change Password", HttpStatus.BAD_REQUEST);
+        }
+    }
 
     /**
      * Login endpoint for user authentication.
@@ -41,10 +66,11 @@ public class AuthController {
      * @return A ResponseEntity containing the UserResponse or an error message.
      */
     @PostMapping("/register/admin")
-    public CompletableFuture<ResponseEntity<?>> registerAdmin(@RequestBody UserRequest request) {
-        return authService.registerForAdminUser(request)
+    public CompletableFuture<ResponseEntity<?>> registerAdmin(@RequestBody UserRequest userRequest, HttpServletRequest request) {
+        String url = CommonUtils.getUrl(request);
+        return authService.registerForAdminUser(userRequest, url)
                 .thenApply(response -> {
-                    return ExceptionUtil.createBuildResponse(response, HttpStatus.OK);
+                    return ExceptionUtil.createBuildResponseMessage("Your account register successfully. verify & Active your account", HttpStatus.OK);
                 });
 
     }
@@ -71,7 +97,7 @@ public class AuthController {
     @GetMapping("/current-user")
     public ResponseEntity<?> getCurrentUser() {
         try {
-            CustomUserDetails loggedInUser= CommonUtils.getLoggedInUser();
+            CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
             return ResponseEntity.ok(loggedInUser);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated....!!");

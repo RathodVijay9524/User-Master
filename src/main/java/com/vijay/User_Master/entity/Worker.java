@@ -28,7 +28,7 @@ public class Worker extends BaseModel {
     private String email;
     @Column(nullable = false)
     private String password;
-    private boolean isActive;
+    private String phoNo;
     private boolean isDeleted;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -41,5 +41,9 @@ public class Worker extends BaseModel {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id",nullable = false)
     private User user;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "status_id")
+    private AccountStatus accountStatus;
 
 }

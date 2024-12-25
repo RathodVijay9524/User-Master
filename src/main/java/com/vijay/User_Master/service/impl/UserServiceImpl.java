@@ -70,7 +70,6 @@ public class UserServiceImpl implements UserService {
                     });
             user.setRoles(Set.of(role));
 
-            user.setActive(true);
             // Save the user in the repository
             userRepository.save(user);
 

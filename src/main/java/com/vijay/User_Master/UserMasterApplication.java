@@ -60,7 +60,6 @@ public class UserMasterApplication {
                     .username("admin")
                     .password(passwordEncoder.encode("admin"))
                     .roles(adminRoles)
-                    .isActive(true)
                     .build();
 
             User user = User.builder()
@@ -69,7 +68,6 @@ public class UserMasterApplication {
                     .username("user")
                     .password(passwordEncoder.encode("user"))
                     .roles(userRoles)
-                    .isActive(true)
                     .build();
 
             User normalUser = User.builder()
@@ -78,7 +76,6 @@ public class UserMasterApplication {
                     .username("normal")
                     .password(passwordEncoder.encode("normal"))
                     .roles(normalRoles)
-                    .isActive(true)
                     .build();
 
             // Save users
@@ -90,7 +87,6 @@ public class UserMasterApplication {
                     .username("worker")
                     .password(passwordEncoder.encode("worker"))
                     .roles(workerRoles)
-                    .isActive(true)
                     .user(admin)
                     .build();
             workerRepository.save(worker);
