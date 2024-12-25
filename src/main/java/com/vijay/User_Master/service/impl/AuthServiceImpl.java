@@ -8,10 +8,7 @@ import com.vijay.User_Master.config.security.model.LoginJWTResponse;
 import com.vijay.User_Master.config.security.model.LoginRequest;
 import com.vijay.User_Master.dto.UserRequest;
 import com.vijay.User_Master.dto.UserResponse;
-import com.vijay.User_Master.dto.form.ChangePasswordForm;
-import com.vijay.User_Master.dto.form.EmailForm;
-import com.vijay.User_Master.dto.form.ForgotPasswordForm;
-import com.vijay.User_Master.dto.form.UnlockForm;
+import com.vijay.User_Master.dto.form.*;
 import com.vijay.User_Master.entity.AccountStatus;
 import com.vijay.User_Master.entity.Role;
 import com.vijay.User_Master.entity.User;
@@ -24,6 +21,7 @@ import com.vijay.User_Master.repository.UserRepository;
 import com.vijay.User_Master.repository.WorkerRepository;
 import com.vijay.User_Master.service.AuthService;
 import com.vijay.User_Master.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
@@ -36,6 +34,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -59,14 +58,14 @@ public class AuthServiceImpl implements AuthService {
     private EmailUtils emailUtils;
     private EmailService emailService;
 
-/*
-*     **************  when user register that time need to send temp password
-*                 to unlock account in email then user can create new password and he or see can log in. *****
-*
-*        but in this application we are verifier user direct when he clicks on link... inside mail
-*        so this method implemented for knowledge
-*
-* */
+    /*
+     *     **************  when user register that time need to send temp password
+     *                 to unlock account in email then user can create new password and he or see can log in. *****
+     *
+     *        but in this application we are verifier user direct when he clicks on link... inside mail
+     *        so this method implemented for knowledge
+     *
+     * */
     @Override
     public boolean unlockAccount(UnlockForm form, String usernameOrEmail) {
         User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
@@ -88,7 +87,7 @@ public class AuthServiceImpl implements AuthService {
         /*
          *   need to set status as unlock or Active, then user can log in
          * */
-        AccountStatus accountStatus=AccountStatus.builder()
+        AccountStatus accountStatus = AccountStatus.builder()
                 .isActive(true)
                 .build();
         user.setAccountStatus(accountStatus);
@@ -268,14 +267,144 @@ public class AuthServiceImpl implements AuthService {
         return mapper.map(worker, UserResponse.class);
     }
 
+    /*
+     *
+     *   Password reset by sending mail logic start from here !!
+     *
+     * */
+
+    @Override
+    public void sendEmailPasswordReset(String email, HttpServletRequest request) throws Exception {
+        User user = userRepository.findByEmail(email);
+        if (ObjectUtils.isEmpty(user)) {
+            throw new BadApiRequestException("invalid Email");
+        }
+
+        // Generate unique password reset token
+        String passwordResetToken = UUID.randomUUID().toString();
+        user.getAccountStatus().setPasswordResetToken(passwordResetToken);
+        User updateUser = userRepository.save(user);
+
+        String url = CommonUtils.getUrl(request);
+        sendEmailRequest(updateUser, url);
+    }
+
+    private void sendEmailRequest(User user, String url) throws Exception {
+
+        String message = "Hi <b>[[username]]</b> "
+                + "<br><p>You have requested to reset your password.</p>"
+                + "<p>Click the link below to change your password:</p>"
+                + "<p><a href=[[url]]>Change my password</a></p>"
+                + "<p>Ignore this email if you do remember your password, "
+                + "or you have not made the request.</p><br>"
+                + "Thanks,<br>  Vijay Rathod";
+
+        message = message.replace("[[username]]", user.getName());
+        message = message.replace("[[url]]", url + "/api/v1/home/verify-pswd-link?uid=" + user.getId() + "&&code="
+                + user.getAccountStatus().getPasswordResetToken());
+
+        EmailForm emailRequest = EmailForm.builder().to(user.getEmail())
+                .title("Password Reset").subject("Password Reset link").message(message).build();
+
+        // send password reset email to user
+        emailService.sendEmail(emailRequest);
+    }
+
+    @Override
+    public void verifyPasswordResetLink(Long uid, String code) throws Exception {
+        User user = userRepository.findById(uid).orElseThrow(() -> new BadApiRequestException("invalid user"));
+        verifyPasswordResetToken(user.getAccountStatus().getPasswordResetToken(), code);
+    }
+
+    @Override
+    public void verifyAndResetPassword(Long uid, String token, String newPassword, String confirmPassword) throws Exception {
+        User user = userRepository.findById(uid)
+                .orElseThrow(() -> new BadApiRequestException("Invalid user"));
+
+        verifyPasswordResetToken(user.getAccountStatus().getPasswordResetToken(), token);
+
+        if (!newPassword.equals(confirmPassword)) {
+            throw new IllegalArgumentException("Passwords do not match");
+        }
+
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        user.setPassword(encodedPassword);
+        user.getAccountStatus().setPasswordResetToken(null);
+        userRepository.save(user);
+        log.info("Password reset successfully for user ID: {}", uid);
+    }
+
+    private void verifyPasswordResetToken(String existToken, String reqToken) {
+        if (!StringUtils.hasText(reqToken)) {
+            throw new IllegalArgumentException("Invalid token");
+        }
+        if (!StringUtils.hasText(existToken)) {
+            throw new IllegalArgumentException("Password already reset");
+        }
+        if (!existToken.equals(reqToken)) {
+            throw new IllegalArgumentException("Invalid URL");
+        }
+    }
 }
 
 
 
+/*
+    @Override
+    public void sendEmailPasswordReset(String email, HttpServletRequest request) throws Exception {
+        User user = userRepository.findByEmail(email);
+        if (ObjectUtils.isEmpty(user)) {
+            log.error("Invalid email: {}", email);
+            throw new BadApiRequestException("Invalid email");
+        }
+
+        // Generate unique password reset token
+        String passwordResetToken = UUID.randomUUID().toString();
+        user.getAccountStatus().setPasswordResetToken(passwordResetToken);
+        User updatedUser = userRepository.save(user);
+
+        String url = CommonUtils.getUrl(request);
+        sendEmailRequest(updatedUser, url);
+        log.info("Password reset email sent to: {}", email);
+    }
+
+    private void sendEmailRequest(User user, String url) throws Exception {
+        String message = "Hi <b>[[username]]</b>, "
+                + "<br><p>You have requested to reset your password.</p>"
+                + "<p>Click the link below to reset your password:</p>"
+                + "<p><a href=[[url]]>Reset my password</a></p>"
+                + "<p>Ignore this email if you remember your password, "
+                + "or you did not make the request.</p><br>"
+                + "Thanks,<br>Vijay Rathod";
+
+        message = message.replace("[[username]]", user.getName());
+        message = message.replace("[[url]]", url + "/api/v1/home/reset-password?uid=" + user.getId() + "&token="
+                + user.getAccountStatus().getPasswordResetToken());
+
+        EmailForm emailRequest = EmailForm.builder()
+                .to(user.getEmail())
+                .title("Password Reset")
+                .subject("Password Reset Link")
+                .message(message)
+                .build();
+
+        // Send password reset email to user
+        emailService.sendEmail(emailRequest);
+        log.info("Password reset email sent to user: {}", user.getEmail());
+    }
 
 
 
-
-
-
-
+    private void verifyPasswordResetToken(String existToken, String reqToken) {
+        if (!StringUtils.hasText(reqToken)) {
+            throw new IllegalArgumentException("Invalid token");
+        }
+        if (!StringUtils.hasText(existToken)) {
+            throw new IllegalArgumentException("Password already reset");
+        }
+        if (!existToken.equals(reqToken)) {
+            throw new IllegalArgumentException("Invalid URL");
+        }
+    }
+}
+*/
