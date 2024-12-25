@@ -10,6 +10,7 @@ import com.vijay.User_Master.dto.UserRequest;
 import com.vijay.User_Master.dto.UserResponse;
 import com.vijay.User_Master.dto.form.ChangePasswordForm;
 import com.vijay.User_Master.dto.form.EmailForm;
+import com.vijay.User_Master.dto.form.ForgotPasswordForm;
 import com.vijay.User_Master.dto.form.UnlockForm;
 import com.vijay.User_Master.entity.AccountStatus;
 import com.vijay.User_Master.entity.Role;
@@ -75,23 +76,27 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public boolean forgotPassword(String email) {
-        User user = userRepository.findByEmail(email);
-        if (user == null) {
-            throw new BadApiRequestException("User not fount with email..");
+    public boolean forgotPassword(ForgotPasswordForm form, String usernameOrEmail) {
+        User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
+                .orElseThrow(() -> {
+                    log.error("User with ID '{}' not found", usernameOrEmail);
+                    return new ResourceNotFoundException("USER", "ID", usernameOrEmail);
+                });
+
+        // Check if new password and confirm password match
+        if (!form.getNewPassword().equals(form.getConfirmPassword())) {
+            throw new IllegalArgumentException("Passwords do not match");
         }
-        //String encodedPassword = user.getPassword();
-        //String decodedPassword = new String(Base64.getDecoder().decode(encodedPassword));
-        String subject = "Recover Email!";
-        String body = "Your Password is: " + user.getPassword();
-        emailUtils.sendEmail(email, subject, body);
+
+        // Encode the new password and save it
+        String encodedNewPassword = passwordEncoder.encode(form.getNewPassword());
+        user.setPassword(encodedNewPassword);
+        userRepository.save(user);
+
+        log.info("Password reset successfully for user ID: {}", user.getId());
         return true;
     }
 
-    @Override
-    public boolean resetPassword(String email) {
-        return false;
-    }
 
     @Override
     public boolean changePassword(ChangePasswordForm form) {
@@ -236,7 +241,17 @@ public class AuthServiceImpl implements AuthService {
         return mapper.map(worker, UserResponse.class);
     }
 
-
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
