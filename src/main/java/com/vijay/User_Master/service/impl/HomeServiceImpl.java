@@ -3,6 +3,7 @@ package com.vijay.User_Master.service.impl;
 import com.vijay.User_Master.dto.form.EmailForm;
 import com.vijay.User_Master.entity.AccountStatus;
 import com.vijay.User_Master.entity.User;
+import com.vijay.User_Master.exceptions.BadApiRequestException;
 import com.vijay.User_Master.exceptions.ResourceNotFoundException;
 import com.vijay.User_Master.repository.UserRepository;
 import com.vijay.User_Master.service.HomeService;
@@ -26,7 +27,7 @@ public class HomeServiceImpl implements HomeService {
                 .orElseThrow(() -> new ResourceNotFoundException("USER", "ID", uid));
 
         if (user.getAccountStatus().getVerificationCode() == null) {
-            throw new RuntimeException("Account already verified");
+            throw new BadApiRequestException("Account already verified");
         }
         if (user.getAccountStatus().getVerificationCode().equals(verificationCode)) {
             AccountStatus status = user.getAccountStatus();

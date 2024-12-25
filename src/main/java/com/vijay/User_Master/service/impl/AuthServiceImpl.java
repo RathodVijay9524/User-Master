@@ -15,6 +15,7 @@ import com.vijay.User_Master.entity.AccountStatus;
 import com.vijay.User_Master.entity.Role;
 import com.vijay.User_Master.entity.User;
 import com.vijay.User_Master.entity.Worker;
+import com.vijay.User_Master.exceptions.BadApiRequestException;
 import com.vijay.User_Master.exceptions.ResourceNotFoundException;
 import com.vijay.User_Master.exceptions.UserAlreadyExistsException;
 import com.vijay.User_Master.repository.RoleRepository;
@@ -77,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
     public boolean forgotPassword(String email) {
         User user = userRepository.findByEmail(email);
         if (user == null) {
-            throw new RuntimeException("User not fount with email..");
+            throw new BadApiRequestException("User not fount with email..");
         }
         //String encodedPassword = user.getPassword();
         //String decodedPassword = new String(Base64.getDecoder().decode(encodedPassword));
@@ -132,7 +133,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(req.getUsernameOrEmail());
         if (!user.getAccountStatus().getIsActive()) {
             log.warn("Account not active for user ID: {}", user.getId());
-            throw new RuntimeException("Account is not active. Please activate your account.");
+            throw new BadApiRequestException("Account is not active. Please activate your account.");
         }
 
         String token = jwtTokenProvider.generateToken(authentication);
@@ -158,7 +159,7 @@ public class AuthServiceImpl implements AuthService {
             User user = mapper.map(request, User.class);
             Role role = roleRepository.findByName("ROLE_NORMAL").orElseThrow(() -> {
                 log.error("Role 'User' not found");
-                return new RuntimeException("Role not found with name 'ROLE_ADMIN'");
+                return new BadApiRequestException("Role not found with name 'ROLE_ADMIN'");
             });
             user.setRoles(Set.of(role));
             //String tempPwd= PwdUtils.generateRandomPwd();
@@ -177,7 +178,7 @@ public class AuthServiceImpl implements AuthService {
             if (!ObjectUtils.isEmpty(savedUser)) {
                 // send email
                 try {
-                    emailSendForRegister(savedUser, url);
+                    emailSendForRegisterUser(savedUser, url);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -188,7 +189,7 @@ public class AuthServiceImpl implements AuthService {
         });
     }
 
-    private void emailSendForRegister(User savedUser, String url) throws Exception {
+    private void emailSendForRegisterUser(User savedUser, String url) throws Exception {
 
         String message = "Hi,<b>[[username]]</b> " + "<br> Your account register sucessfully.<br>"
                 + "<br> Click the below link verify & Active your account <br>"
@@ -222,7 +223,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Fetch the worker role from the repository
         Role workerRole = roleRepository.findByName("ROLE_WORKER")
-                .orElseThrow(() -> new RuntimeException("Worker role not found."));
+                .orElseThrow(() -> new BadApiRequestException("Worker role not found."));
 
         // Initialize the roles field if it's null
         if (worker.getRoles() == null) {
