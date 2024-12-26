@@ -1,4 +1,4 @@
-package com.vijay.User_Master.service;
+package com.vijay.User_Master.service.generics;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;

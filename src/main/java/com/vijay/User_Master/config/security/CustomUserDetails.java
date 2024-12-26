@@ -5,6 +5,7 @@ import com.vijay.User_Master.entity.AccountStatus;
 import com.vijay.User_Master.entity.Role;
 import com.vijay.User_Master.entity.User;
 import com.vijay.User_Master.entity.Worker;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
@@ -13,6 +14,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @Setter
+@AllArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
     private Long id;
@@ -31,22 +34,11 @@ public class CustomUserDetails implements UserDetails {
     private Set<Role> roles;
     private String phoNo;
     private boolean isDeleted;
+    private LocalDateTime deletedOn;
     @JsonIgnore
     private List<Worker> workers;
     private AccountStatus accountStatus;
 
-    public CustomUserDetails(Long id, String name, String username, String email, String password, Set<Role> roles, String phoNo, boolean isDeleted, List<Worker> workers, AccountStatus accountStatus) {
-        this.id = id;
-        this.name = name;
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.roles = roles;
-        this.phoNo = phoNo;
-        this.isDeleted = isDeleted;
-        this.workers = workers;
-        this.accountStatus = accountStatus;
-    }
 
     public static CustomUserDetails build(User user) {
         return new CustomUserDetails(
@@ -58,6 +50,7 @@ public class CustomUserDetails implements UserDetails {
                 user.getRoles(),
                 user.getPhoNo(),
                 user.isDeleted(),
+                user.getDeletedOn(),
                 user.getWorkers(),
                 user.getAccountStatus()
         );
@@ -73,6 +66,7 @@ public class CustomUserDetails implements UserDetails {
                 worker.getRoles(),
                 worker.getPhoNo(),
                 worker.isDeleted(),
+                worker.getDeletedOn(),
                 null, // Workers don't have associated workers, so set it to null
                 worker.getAccountStatus()
         );

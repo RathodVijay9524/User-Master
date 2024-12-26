@@ -1,8 +1,7 @@
 package com.vijay.User_Master.dto;
 
 import com.vijay.User_Master.entity.AccountStatus;
-import com.vijay.User_Master.entity.Role;
-import jakarta.persistence.Column;
+import com.vijay.User_Master.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,16 +14,17 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserRequest {
+public class WorkerResponse {
 
     private String name;
+
     private String username;
+
     private String email;
     private String password;
     private String phoNo;
     private boolean isDeleted;
     private LocalDateTime deletedOn;
     private Set<String> roles; // Roles are strings like "ROLE_ADMIN"
-    private AccountStatus accountStatus;
 
 }

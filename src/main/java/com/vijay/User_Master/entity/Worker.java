@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 
@@ -30,6 +31,7 @@ public class Worker extends BaseModel {
     private String password;
     private String phoNo;
     private boolean isDeleted;
+    private LocalDateTime deletedOn;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "workers_roles",
