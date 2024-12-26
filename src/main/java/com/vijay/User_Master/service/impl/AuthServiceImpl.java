@@ -161,8 +161,14 @@ public class AuthServiceImpl implements AuthService {
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(req.getUsernameOrEmail());
 
+        Worker worker = workerRepository.findByEmail(req.getUsernameOrEmail());
+        if (worker != null && !worker.getAccountStatus().getIsActive()) {
+            log.warn("Account not active for user ID: {}", worker.getId());
+            throw new BadApiRequestException("Account is not active. Please activate your account.");
+        }
+
         User user = userRepository.findByEmail(req.getUsernameOrEmail());
-        if (!user.getAccountStatus().getIsActive()) {
+        if (user != null && !user.getAccountStatus().getIsActive()) {
             log.warn("Account not active for user ID: {}", user.getId());
             throw new BadApiRequestException("Account is not active. Please activate your account.");
         }

@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Data
@@ -21,6 +22,8 @@ public class UserRequest {
     private String email;
     private String password;
     private String phoNo;
+    private boolean isDeleted;
+    private LocalDateTime deletedOn;
     private Set<String> roles; // Roles are strings like "ROLE_ADMIN"
     private AccountStatus accountStatus;
 
