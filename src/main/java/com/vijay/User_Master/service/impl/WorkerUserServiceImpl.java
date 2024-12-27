@@ -155,6 +155,7 @@ public class WorkerUserServiceImpl implements WorkerUserService {
     public PageableResponse<WorkerResponse> getRecycleBin(Pageable pageable) { // restore delete item from RecycleBin
         CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
         Page<Worker> users = workerRepository.findByCreatedByAndIsDeletedTrue(loggedInUser.getId(), pageable);
+
         if (workerRepository.findByCreatedByAndIsDeletedTrue(loggedInUser.getId(), pageable).isEmpty()) {
             throw new ResourceNotFoundException("Recycle Bin", "Workers", "No deleted workers found for the current user.");
         }
