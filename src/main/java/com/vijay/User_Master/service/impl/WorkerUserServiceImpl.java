@@ -1,7 +1,10 @@
 package com.vijay.User_Master.service.impl;
 
 import com.vijay.User_Master.Helper.CommonUtils;
+import com.vijay.User_Master.Helper.Helper;
 import com.vijay.User_Master.config.security.CustomUserDetails;
+import com.vijay.User_Master.dto.PageableResponse;
+import com.vijay.User_Master.dto.UserResponse;
 import com.vijay.User_Master.dto.WorkerResponse;
 import com.vijay.User_Master.entity.AccountStatus;
 import com.vijay.User_Master.entity.User;
@@ -13,9 +16,7 @@ import com.vijay.User_Master.service.WorkerUserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -90,6 +91,7 @@ public class WorkerUserServiceImpl implements WorkerUserService {
             throw new IllegalArgumentException("Sorry You can't hard delete Directly");
         }
     }
+
     @Override
     public WorkerResponse copy(Long aLong) throws Exception {
         return null;
@@ -100,24 +102,33 @@ public class WorkerUserServiceImpl implements WorkerUserService {
         return null;
     }
 
-
     @Override
     public Page<WorkerResponse> search(String query, Pageable pageable) {
+        return null;
+    }
+
+
+    @Override
+    public PageableResponse<WorkerResponse> searchActiveUserWithDynamicFields(String query, Pageable pageable) {
         Specification<Worker> spec = (root, criteriaQuery, criteriaBuilder) -> {
             String likePattern = "%" + query + "%";
-            return criteriaBuilder.or(
-                    criteriaBuilder.like(root.get("name"), likePattern),
-                    criteriaBuilder.like(root.get("username"), likePattern),
-                    criteriaBuilder.like(root.get("email"), likePattern),
-                    criteriaBuilder.like(root.get("phoNo"), likePattern),
-                    criteriaBuilder.like(root.get("accountStatus").get("isActive").as(String.class), likePattern)
-            );
+            return criteriaBuilder.or(criteriaBuilder.like(root.get("name"), likePattern), criteriaBuilder.like(root.get("username"), likePattern), criteriaBuilder.like(root.get("email"), likePattern), criteriaBuilder.like(root.get("phoNo"), likePattern), criteriaBuilder.like(root.get("accountStatus").get("isActive").as(String.class), likePattern));
         };
         Page<Worker> workerPage = workerRepository.findAll(spec, pageable);
-        List<WorkerResponse> workerResponses = workerPage.getContent().stream()
-                .map(worker -> mapper.map(worker, WorkerResponse.class))
-                .collect(Collectors.toList());
-        return new PageImpl<>(workerResponses, pageable, workerPage.getTotalElements());
+        List<WorkerResponse> workerResponses = workerPage.getContent().stream().map(worker -> mapper.map(worker, WorkerResponse.class)).collect(Collectors.toList());
+        return PageableResponse.<WorkerResponse>builder()
+                .content(workerResponses)
+                .pageNumber(workerPage.getNumber())
+                .pageSize(workerPage.getSize())
+                .totalElements(workerPage.getTotalElements()).totalPages(workerPage.getTotalPages()).lastPage(workerPage.isLast()).build();
+    }
+
+    @Override
+    public PageableResponse<WorkerResponse> getAllActiveUserWithSortingSearching(int pageNumber, int pageSize, String sortBy, String sortDir) {
+        Sort sort = (sortDir.equalsIgnoreCase("desc")) ? (Sort.by(sortBy).descending()) : (Sort.by(sortBy).ascending());
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
+        Page<Worker> allPages = workerRepository.findAll(pageable);
+        return Helper.getPageableResponse(allPages, WorkerResponse.class);
     }
 
 
@@ -125,8 +136,8 @@ public class WorkerUserServiceImpl implements WorkerUserService {
     public void emptyRecycleBin() {
         CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
         List<Worker> recycleNotes = workerRepository.findByCreatedByAndIsDeletedTrue(loggedInUser.getId());
-        if(!ObjectUtils.isEmpty(recycleNotes)){
-           workerRepository.deleteAll(recycleNotes);
+        if (!ObjectUtils.isEmpty(recycleNotes)) {
+            workerRepository.deleteAll(recycleNotes);
         }
     }
 
@@ -137,6 +148,7 @@ public class WorkerUserServiceImpl implements WorkerUserService {
                 .map((worker -> mapper.map(worker, WorkerResponse.class)))
                 .collect(Collectors.toList());
     }
+
     // find all only Active users by superuser id or loggedInUser userId
     @Override
     public List<WorkerResponse> findAllActiveUsers() {
@@ -146,6 +158,8 @@ public class WorkerUserServiceImpl implements WorkerUserService {
                 .map((worker -> mapper.map(worker, WorkerResponse.class)))
                 .collect(Collectors.toList());
     }
+
+
     // find all only Deleted users by superuser id or loggedInUser userId
     @Override
     public List<WorkerResponse> getRecycleBin() { // restore delete item from RecycleBin
