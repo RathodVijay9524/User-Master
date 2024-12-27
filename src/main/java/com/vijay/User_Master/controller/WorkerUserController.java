@@ -45,6 +45,11 @@ public class WorkerUserController {
     public ResponseEntity<?> getSoftDeletedUser(){
         return ExceptionUtil.createBuildResponse(workerUserService.getRecycleBin(),HttpStatus.OK);
     }
+    @DeleteMapping("/recycle/delete")
+    public ResponseEntity<?> deleteAllUserSuperUserId(){
+        workerUserService.emptyRecycleBin();
+        return ExceptionUtil.createBuildResponse("Deleted All item form Recycle Bin..! now Empty Recycle Bin. !",HttpStatus.OK);
+    }
 
 
 }

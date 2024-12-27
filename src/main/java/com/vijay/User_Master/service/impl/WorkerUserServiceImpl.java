@@ -16,6 +16,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 
 import java.time.LocalDateTime;
@@ -103,8 +104,12 @@ public class WorkerUserServiceImpl implements WorkerUserService {
     }
 
     @Override
-    public void emptyRecycleBin() { //findByCreatedByAndIsDeletedTrue
-
+    public void emptyRecycleBin() {
+        CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
+        List<Worker> recycleNotes = workerRepository.findByCreatedByAndIsDeletedTrue(loggedInUser.getId());
+        if(!ObjectUtils.isEmpty(recycleNotes)){
+           workerRepository.deleteAll(recycleNotes);
+        }
     }
 
     // find all User from Worker user Entity
