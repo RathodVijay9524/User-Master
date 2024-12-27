@@ -14,7 +14,9 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
@@ -98,10 +100,26 @@ public class WorkerUserServiceImpl implements WorkerUserService {
         return null;
     }
 
+
     @Override
     public Page<WorkerResponse> search(String query, Pageable pageable) {
-        return null;
+        Specification<Worker> spec = (root, criteriaQuery, criteriaBuilder) -> {
+            String likePattern = "%" + query + "%";
+            return criteriaBuilder.or(
+                    criteriaBuilder.like(root.get("name"), likePattern),
+                    criteriaBuilder.like(root.get("username"), likePattern),
+                    criteriaBuilder.like(root.get("email"), likePattern),
+                    criteriaBuilder.like(root.get("phoNo"), likePattern),
+                    criteriaBuilder.like(root.get("accountStatus").get("isActive").as(String.class), likePattern)
+            );
+        };
+        Page<Worker> workerPage = workerRepository.findAll(spec, pageable);
+        List<WorkerResponse> workerResponses = workerPage.getContent().stream()
+                .map(worker -> mapper.map(worker, WorkerResponse.class))
+                .collect(Collectors.toList());
+        return new PageImpl<>(workerResponses, pageable, workerPage.getTotalElements());
     }
+
 
     @Override
     public void emptyRecycleBin() {
