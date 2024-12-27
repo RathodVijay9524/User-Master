@@ -12,9 +12,11 @@ import java.util.List;
 
 public interface WorkerUserService extends AdvancedCrudService<WorkerResponse, Long> {
 
-    public void emptyRecycleBin();  //findByCreatedByAndIsDeletedTrue
+    
     List<WorkerResponse> findAllActiveUsers();
     PageableResponse<WorkerResponse> getAllActiveUserWithSortingSearching(int pageNumber, int pageSize, String sortBy, String sortDir);
-    PageableResponse<WorkerResponse> searchActiveUserWithDynamicFields(String query, Pageable pageable);
+
+
+    //  PageableResponse<WorkerResponse> searchActiveUserWithDynamicFields(String query, Pageable pageable);
 
 }

@@ -97,19 +97,15 @@ public class WorkerUserServiceImpl implements WorkerUserService {
         return null;
     }
 
+    // find all User from Worker user Entity
     @Override
-    public Page<WorkerResponse> findAll(Pageable pageable) {
-        return null;
+    public PageableResponse<WorkerResponse> findAll(Pageable pageable) {
+        Page<Worker> pages = workerRepository.findAll(pageable);
+        return Helper.getPageableResponse(pages, WorkerResponse.class);
     }
 
     @Override
-    public Page<WorkerResponse> search(String query, Pageable pageable) {
-        return null;
-    }
-
-
-    @Override
-    public PageableResponse<WorkerResponse> searchActiveUserWithDynamicFields(String query, Pageable pageable) {
+    public PageableResponse<WorkerResponse> searchItemsWithDynamicFields(String query, Pageable pageable) {
         Specification<Worker> spec = (root, criteriaQuery, criteriaBuilder) -> {
             String likePattern = "%" + query + "%";
             return criteriaBuilder.or(
@@ -131,22 +127,16 @@ public class WorkerUserServiceImpl implements WorkerUserService {
         return Helper.getPageableResponse(allPages, WorkerResponse.class);
     }
 
-
     @Override
-    public void emptyRecycleBin() {
+    public void emptyRecycleBin(Pageable pageable) {
         CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
-        List<Worker> recycleNotes = workerRepository.findByCreatedByAndIsDeletedTrue(loggedInUser.getId());
-        if (!ObjectUtils.isEmpty(recycleNotes)) {
-            workerRepository.deleteAll(recycleNotes);
+        Page<Worker> pages = workerRepository.findByCreatedByAndIsDeletedTrue(loggedInUser.getId(), pageable);
+        if (pages.isEmpty()) {
+            throw new ResourceNotFoundException("Recycle Bin", "Workers", "No deleted workers found for the current user.");
         }
-    }
-
-    // find all User from Worker user Entity
-    @Override
-    public List<WorkerResponse> findAll() {
-        return workerRepository.findAll().stream()
-                .map((worker -> mapper.map(worker, WorkerResponse.class)))
-                .collect(Collectors.toList());
+        if (!ObjectUtils.isEmpty(pages)) {
+            workerRepository.deleteAll(pages);
+        }
     }
 
     // find all only Active users by superuser id or loggedInUser userId
@@ -162,15 +152,13 @@ public class WorkerUserServiceImpl implements WorkerUserService {
 
     // find all only Deleted users by superuser id or loggedInUser userId
     @Override
-    public List<WorkerResponse> getRecycleBin() { // restore delete item from RecycleBin
+    public PageableResponse<WorkerResponse> getRecycleBin(Pageable pageable) { // restore delete item from RecycleBin
         CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
-        List<Worker> listUser = workerRepository.findByCreatedByAndIsDeletedTrue(loggedInUser.getId());
-        if (listUser.isEmpty()) {
+        Page<Worker> users = workerRepository.findByCreatedByAndIsDeletedTrue(loggedInUser.getId(), pageable);
+        if (workerRepository.findByCreatedByAndIsDeletedTrue(loggedInUser.getId(), pageable).isEmpty()) {
             throw new ResourceNotFoundException("Recycle Bin", "Workers", "No deleted workers found for the current user.");
         }
-        return listUser.stream()
-                .map(worker -> mapper.map(worker, WorkerResponse.class))
-                .collect(Collectors.toList());
+        return Helper.getPageableResponse(users, WorkerResponse.class);
     }
 }
                    

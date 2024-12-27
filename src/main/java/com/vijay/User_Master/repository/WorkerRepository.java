@@ -1,6 +1,8 @@
 package com.vijay.User_Master.repository;
 
 import com.vijay.User_Master.entity.Worker;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -24,7 +26,7 @@ public interface WorkerRepository extends JpaRepository<Worker, Long>, JpaSpecif
     List<Worker> findByCreatedByAndIsDeletedFalse(Long id);
 
     // Find all workers created by a specific user and marked as deleted
-    List<Worker> findByCreatedByAndIsDeletedTrue(Long userId);
+    Page<Worker> findByCreatedByAndIsDeletedTrue(Long userId, Pageable pageable);
 
     // Find all workers by a specific status
     List<Worker> findByAccountStatus_IsActive(Boolean isActive);
