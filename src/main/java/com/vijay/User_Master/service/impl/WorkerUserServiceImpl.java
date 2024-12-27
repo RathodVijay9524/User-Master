@@ -112,7 +112,12 @@ public class WorkerUserServiceImpl implements WorkerUserService {
     public PageableResponse<WorkerResponse> searchActiveUserWithDynamicFields(String query, Pageable pageable) {
         Specification<Worker> spec = (root, criteriaQuery, criteriaBuilder) -> {
             String likePattern = "%" + query + "%";
-            return criteriaBuilder.or(criteriaBuilder.like(root.get("name"), likePattern), criteriaBuilder.like(root.get("username"), likePattern), criteriaBuilder.like(root.get("email"), likePattern), criteriaBuilder.like(root.get("phoNo"), likePattern), criteriaBuilder.like(root.get("accountStatus").get("isActive").as(String.class), likePattern));
+            return criteriaBuilder.or(
+                    criteriaBuilder.like(root.get("name"), likePattern),
+                    criteriaBuilder.like(root.get("username"), likePattern),
+                    criteriaBuilder.like(root.get("email"), likePattern),
+                    criteriaBuilder.like(root.get("phoNo"), likePattern),
+                    criteriaBuilder.like(root.get("accountStatus").get("isActive").as(String.class), likePattern));
         };
         Page<Worker> workerPage = workerRepository.findAll(spec, pageable);
         return Helper.getPageableResponse(workerPage, WorkerResponse.class);
