@@ -115,12 +115,7 @@ public class WorkerUserServiceImpl implements WorkerUserService {
             return criteriaBuilder.or(criteriaBuilder.like(root.get("name"), likePattern), criteriaBuilder.like(root.get("username"), likePattern), criteriaBuilder.like(root.get("email"), likePattern), criteriaBuilder.like(root.get("phoNo"), likePattern), criteriaBuilder.like(root.get("accountStatus").get("isActive").as(String.class), likePattern));
         };
         Page<Worker> workerPage = workerRepository.findAll(spec, pageable);
-        List<WorkerResponse> workerResponses = workerPage.getContent().stream().map(worker -> mapper.map(worker, WorkerResponse.class)).collect(Collectors.toList());
-        return PageableResponse.<WorkerResponse>builder()
-                .content(workerResponses)
-                .pageNumber(workerPage.getNumber())
-                .pageSize(workerPage.getSize())
-                .totalElements(workerPage.getTotalElements()).totalPages(workerPage.getTotalPages()).lastPage(workerPage.isLast()).build();
+        return Helper.getPageableResponse(workerPage, WorkerResponse.class);
     }
 
     @Override
