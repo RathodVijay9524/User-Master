@@ -1,5 +1,6 @@
 package com.vijay.User_Master.service;
 
+import com.vijay.User_Master.dto.FavouriteEntryResponse;
 import com.vijay.User_Master.dto.PageableResponse;
 import com.vijay.User_Master.dto.UserResponse;
 
@@ -16,7 +17,12 @@ public interface WorkerUserService extends AdvancedCrudService<WorkerResponse, L
     List<WorkerResponse> findAllActiveUsers();
     PageableResponse<WorkerResponse> getAllActiveUserWithSortingSearching(int pageNumber, int pageSize, String sortBy, String sortDir);
 
+    void favoriteWorkerUser(Long workerId) throws Exception;
 
-    //  PageableResponse<WorkerResponse> searchActiveUserWithDynamicFields(String query, Pageable pageable);
+    void unFavoriteWorkerUser(Long Id) throws Exception;
+
+    List<FavouriteEntryResponse> getUserFavoriteWorkerUsers() throws Exception;
+
+
 
 }

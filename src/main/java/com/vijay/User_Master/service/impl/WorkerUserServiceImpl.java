@@ -3,13 +3,16 @@ package com.vijay.User_Master.service.impl;
 import com.vijay.User_Master.Helper.CommonUtils;
 import com.vijay.User_Master.Helper.Helper;
 import com.vijay.User_Master.config.security.CustomUserDetails;
+import com.vijay.User_Master.dto.FavouriteEntryResponse;
 import com.vijay.User_Master.dto.PageableResponse;
 import com.vijay.User_Master.dto.UserResponse;
 import com.vijay.User_Master.dto.WorkerResponse;
 import com.vijay.User_Master.entity.AccountStatus;
+import com.vijay.User_Master.entity.FavouriteEntry;
 import com.vijay.User_Master.entity.User;
 import com.vijay.User_Master.entity.Worker;
 import com.vijay.User_Master.exceptions.ResourceNotFoundException;
+import com.vijay.User_Master.repository.FavouriteEntryRepo;
 import com.vijay.User_Master.repository.UserRepository;
 import com.vijay.User_Master.repository.WorkerRepository;
 import com.vijay.User_Master.service.WorkerUserService;
@@ -34,7 +37,7 @@ public class WorkerUserServiceImpl implements WorkerUserService {
 
     private final WorkerRepository workerRepository;
     private final ModelMapper mapper;
-    private final UserRepository userRepository;
+    private final FavouriteEntryRepo favouriteEntryRepo;
 
     // find user by id ... for Worker Entity
     @Override
@@ -127,6 +130,7 @@ public class WorkerUserServiceImpl implements WorkerUserService {
         return Helper.getPageableResponse(allPages, WorkerResponse.class);
     }
 
+
     @Override
     public void emptyRecycleBin(Pageable pageable) {
         CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
@@ -161,5 +165,36 @@ public class WorkerUserServiceImpl implements WorkerUserService {
         }
         return Helper.getPageableResponse(users, WorkerResponse.class);
     }
+
+    @Override
+    public void favoriteWorkerUser(Long workerId) throws Exception {
+        CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
+        Worker worker = workerRepository.findById(workerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Worker", "ID", workerId));
+        FavouriteEntry favouriteEntry = FavouriteEntry.builder()
+                .worker(worker)
+                .userId(loggedInUser.getId())
+                .build(); // Assuming the user who favorites is the worker's associated user .build();
+        favouriteEntryRepo.save(favouriteEntry);
+    }
+
+    @Override
+    public void unFavoriteWorkerUser(Long id) throws Exception {
+        FavouriteEntry favouriteEntry = favouriteEntryRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Favorite", "ID", id));
+        favouriteEntryRepo.delete(favouriteEntry);
+    }
+
+    @Override
+    public List<FavouriteEntryResponse> getUserFavoriteWorkerUsers() throws Exception {
+        CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
+        List<FavouriteEntry> favouriteWorkers = favouriteEntryRepo.findByUserId(loggedInUser.getId());
+        return favouriteWorkers.stream()
+                .map((worker)-> mapper.map(worker, FavouriteEntryResponse.class))
+                .collect(Collectors.toList());
+    }
+
+
+
 }
                    

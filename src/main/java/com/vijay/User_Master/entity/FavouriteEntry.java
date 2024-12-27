@@ -22,7 +22,7 @@ public class FavouriteEntry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @ManyToOne
     private Worker worker;  // You can rename `Notes` to a more generic entity name if needed
