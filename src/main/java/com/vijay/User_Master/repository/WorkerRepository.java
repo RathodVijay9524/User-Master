@@ -4,6 +4,7 @@ import com.vijay.User_Master.entity.Worker;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -19,4 +20,7 @@ public interface WorkerRepository extends JpaRepository<Worker, Long> {
     Boolean existsByUsername(String username);
 
     Boolean existsByEmail(String email);
+
+    List<Worker> findByCreatedByAndIsDeletedTrue(Long id);
+    List<Worker> findByCreatedByAndIsDeletedFalse(Long id);
 }
