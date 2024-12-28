@@ -22,7 +22,6 @@ import java.util.concurrent.CompletableFuture;
 @RestController
 @RequestMapping("/api/auth")
 @AllArgsConstructor
-@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final AuthService authService;
