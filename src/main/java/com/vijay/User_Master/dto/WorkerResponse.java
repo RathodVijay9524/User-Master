@@ -12,7 +12,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Builder
 public class WorkerResponse {
-
+    private Long id;
     private String name;
 
     private String username;

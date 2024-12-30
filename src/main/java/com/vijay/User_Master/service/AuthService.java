@@ -21,6 +21,7 @@ public interface AuthService {
     boolean forgotPassword(ForgotPasswordForm from, String email);
     boolean changePassword(ChangePasswordForm form);
     boolean existsByUsernameOrEmail(String usernameOrEmail);
+    boolean existsByUsernameOrEmailFields(String username, String email);
     LoginJWTResponse login(LoginRequest req);
     CompletableFuture<Object> registerForAdminUser(UserRequest request,String url);
     UserResponse registerForNormalUser(UserRequest request);
