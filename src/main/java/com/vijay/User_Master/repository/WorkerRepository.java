@@ -23,10 +23,10 @@ public interface WorkerRepository extends JpaRepository<Worker, Long>, JpaSpecif
     Boolean existsByEmail(String email);
 
 
-    List<Worker> findByCreatedByAndIsDeletedFalse(Long id);
+    Page<Worker> findByCreatedByAndIsDeletedFalse(Long createdBy, Pageable pageable);
 
     // Find all workers created by a specific user and marked as deleted
-    Page<Worker> findByCreatedByAndIsDeletedTrue(Long userId, Pageable pageable);
+    Page<Worker> findByCreatedByAndIsDeletedTrue(Long createdBy, Pageable pageable);
 
     // Find all workers by a specific status
     List<Worker> findByAccountStatus_IsActive(Boolean isActive);
@@ -36,6 +36,8 @@ public interface WorkerRepository extends JpaRepository<Worker, Long>, JpaSpecif
 
     // Find all workers by username
     List<Worker> findByUsername(String username);
+
+    Page<Worker> findByUser(Long loggedInUserId, Pageable pageable);
 }
 
 

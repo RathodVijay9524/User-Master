@@ -124,9 +124,12 @@ public class WorkerUserServiceImpl implements WorkerUserService {
 
     @Override
     public PageableResponse<WorkerResponse> getAllActiveUserWithSortingSearching(int pageNumber, int pageSize, String sortBy, String sortDir) {
+        CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
+        Long loggedInUserId = loggedInUser.getId();
+        log.info("Logged in user ID: {}", loggedInUserId);
         Sort sort = (sortDir.equalsIgnoreCase("desc")) ? (Sort.by(sortBy).descending()) : (Sort.by(sortBy).ascending());
         Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
-        Page<Worker> allPages = workerRepository.findAll(pageable);
+        Page<Worker> allPages = workerRepository.findByCreatedByAndIsDeletedFalse(loggedInUserId, pageable);
         return Helper.getPageableResponse(allPages, WorkerResponse.class);
     }
 
@@ -146,8 +149,8 @@ public class WorkerUserServiceImpl implements WorkerUserService {
     // find all only Active users by superuser id or loggedInUser userId
     @Override
     public List<WorkerResponse> findAllActiveUsers() {
-        CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
-        List<Worker> userLists = workerRepository.findByCreatedByAndIsDeletedFalse(loggedInUser.getId());
+        //CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
+        List<Worker> userLists = workerRepository.findAll();
         return userLists.stream()
                 .map((worker -> mapper.map(worker, WorkerResponse.class)))
                 .collect(Collectors.toList());
@@ -190,10 +193,9 @@ public class WorkerUserServiceImpl implements WorkerUserService {
         CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
         List<FavouriteEntry> favouriteWorkers = favouriteEntryRepo.findByUserId(loggedInUser.getId());
         return favouriteWorkers.stream()
-                .map((worker)-> mapper.map(worker, FavouriteEntryResponse.class))
+                .map((worker) -> mapper.map(worker, FavouriteEntryResponse.class))
                 .collect(Collectors.toList());
     }
-
 
 
 }

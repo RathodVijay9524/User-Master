@@ -7,6 +7,7 @@ import com.vijay.User_Master.config.security.model.LoginJWTResponse;
 import com.vijay.User_Master.config.security.model.LoginRequest;
 import com.vijay.User_Master.dto.UserRequest;
 import com.vijay.User_Master.dto.UserResponse;
+import com.vijay.User_Master.dto.form.AvailabilityResponse;
 import com.vijay.User_Master.dto.form.ChangePasswordForm;
 
 import com.vijay.User_Master.dto.form.UnlockForm;
@@ -29,7 +30,7 @@ public class AuthController {
 
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordForm form) {
-        boolean result= authService.changePassword(form);
+        boolean result = authService.changePassword(form);
         if (result) {
             return ExceptionUtil.createBuildResponseMessage("Password Changed. !!", HttpStatus.OK);
         } else {
@@ -92,6 +93,12 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated....!!");
         }
+    }
+
+    @PostMapping("/register/check-availability")
+    public ResponseEntity<AvailabilityResponse> checkAvailability(@RequestParam("usernameOrEmail") String usernameOrEmail) {
+        boolean exists = authService.existsByUsernameOrEmail(usernameOrEmail);
+        return ResponseEntity.ok(new AvailabilityResponse(exists));
     }
 
 }

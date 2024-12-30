@@ -144,7 +144,10 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(user);
         return true;
     }
-
+    @Override
+    public boolean existsByUsernameOrEmailFields(String username, String email) {
+     return true;
+    }
     @Override
     public boolean existsByUsernameOrEmail(String usernameOrEmail) {
         return userRepository.existsByUsername(usernameOrEmail)
