@@ -16,6 +16,4 @@ public class LoginJWTResponse {
 
     private String jwtToken;
     private UserResponse user;
-
-
 }
