@@ -26,12 +26,12 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private ModelMapper mapper;
 
     @Override
-    public RefreshTokenDto createRefreshToken(String usernameOrEmail) {
-        log.info("Creating refresh token for: {}", usernameOrEmail);
+    public RefreshTokenDto createRefreshToken(String username,String email) {
+        log.info("Creating refresh token for: {}", username);
 
         // Find user by username or email
-        User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", usernameOrEmail));
+        User user = userRepository.findByUsernameOrEmail(username, email)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", username));
 
         // Check if a refresh token already exists for the user
         RefreshToken refreshToken = refreshTokenRepository.findByUser(user).orElse(null);

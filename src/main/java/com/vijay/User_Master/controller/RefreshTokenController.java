@@ -50,7 +50,7 @@ public class RefreshTokenController {
         log.info("New JWT Token: {}", newJwtToken);
 
         // Create new refresh token
-        RefreshTokenDto newRefreshTokenDto = refreshTokenService.createRefreshToken(user.getUsername());
+        RefreshTokenDto newRefreshTokenDto = refreshTokenService.createRefreshToken(user.getUsername(), user.getEmail());
         log.info("New Refresh Token: {}", newRefreshTokenDto);
 
         JwtResponse jwtResponse = JwtResponse.builder()
@@ -65,7 +65,7 @@ public class RefreshTokenController {
 
     @PostMapping
     public ResponseEntity<?> createRefreshToken(@RequestParam String usernameOrEmail) {
-        RefreshTokenDto refreshToken = refreshTokenService.createRefreshToken(usernameOrEmail);
+        RefreshTokenDto refreshToken = refreshTokenService.createRefreshToken(usernameOrEmail,usernameOrEmail);
         return ExceptionUtil.createBuildResponse(refreshToken, HttpStatus.OK);
     }
 

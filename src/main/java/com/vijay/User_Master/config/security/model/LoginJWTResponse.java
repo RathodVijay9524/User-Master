@@ -1,5 +1,6 @@
 package com.vijay.User_Master.config.security.model;
 
+import com.vijay.User_Master.dto.RefreshTokenDto;
 import com.vijay.User_Master.dto.UserResponse;
 
 import com.vijay.User_Master.entity.Role;
@@ -16,4 +17,5 @@ public class LoginJWTResponse {
 
     private String jwtToken;
     private UserResponse user;
+    private RefreshTokenDto refreshTokenDto;
 }

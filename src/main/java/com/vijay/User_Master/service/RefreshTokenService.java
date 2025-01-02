@@ -6,7 +6,7 @@ import com.vijay.User_Master.dto.UserResponse;
 public interface RefreshTokenService {
 
     //create
-    RefreshTokenDto createRefreshToken(String username);
+    RefreshTokenDto createRefreshToken(String username,String email);
 
     // find by token
     RefreshTokenDto findByToken(String token);
