@@ -6,6 +6,7 @@ import com.vijay.User_Master.config.security.CustomUserDetails;
 import com.vijay.User_Master.config.security.JwtTokenProvider;
 import com.vijay.User_Master.config.security.model.LoginJWTResponse;
 import com.vijay.User_Master.config.security.model.LoginRequest;
+import com.vijay.User_Master.dto.RefreshTokenDto;
 import com.vijay.User_Master.dto.UserRequest;
 import com.vijay.User_Master.dto.UserResponse;
 import com.vijay.User_Master.dto.form.*;
@@ -20,6 +21,7 @@ import com.vijay.User_Master.repository.RoleRepository;
 import com.vijay.User_Master.repository.UserRepository;
 import com.vijay.User_Master.repository.WorkerRepository;
 import com.vijay.User_Master.service.AuthService;
+import com.vijay.User_Master.service.RefreshTokenService;
 import com.vijay.User_Master.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
@@ -57,6 +59,7 @@ public class AuthServiceImpl implements AuthService {
     private AuthenticationManager authenticationManager;
     private EmailUtils emailUtils;
     private EmailService emailService;
+    private final RefreshTokenService refreshTokenService;
 
     /*
      *     **************  when user register that time need to send temp password
@@ -164,16 +167,39 @@ public class AuthServiceImpl implements AuthService {
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(req.getUsernameOrEmail());
 
-        Worker worker = workerRepository.findByEmail(req.getUsernameOrEmail());
-        if (worker != null && !worker.getAccountStatus().getIsActive()) {
-            log.warn("Account not active for user ID: {}", worker.getId());
+        // Check if the input is an email or username
+        User user = null;
+        Worker worker = null;
+        if (isEmail(req.getUsernameOrEmail())) {
+            user = userRepository.findByEmail(req.getUsernameOrEmail());
+            worker = workerRepository.findByEmail(req.getUsernameOrEmail());
+        } else {
+            user = userRepository.findByUsername(req.getUsernameOrEmail());
+            worker = workerRepository.findByEmail(req.getUsernameOrEmail());
+        }
+
+        if (worker != null && (worker.getAccountStatus() == null || !worker.getAccountStatus().getIsActive())) {
+            log.warn("Account status is null or inactive for worker ID: {}", worker.getId());
+            throw new BadApiRequestException("Account is not active. Please activate your account.");
+        }
+        if (user != null && (user.getAccountStatus() == null || !user.getAccountStatus().getIsActive())) {
+            log.warn("Account status is null or inactive for user ID: {}", user.getId());
             throw new BadApiRequestException("Account is not active. Please activate your account.");
         }
 
-        User user = userRepository.findByEmail(req.getUsernameOrEmail());
-        if (user != null && !user.getAccountStatus().getIsActive()) {
-            log.warn("Account not active for user ID: {}", user.getId());
-            throw new BadApiRequestException("Account is not active. Please activate your account.");
+        // Create new refresh token
+        RefreshTokenDto refreshTokenCreated = null;
+        if (user != null) {
+            log.info("Creating refresh token for user: {}", user.getUsername());
+            refreshTokenCreated = refreshTokenService.createRefreshToken(user.getUsername(), user.getEmail());
+        } else if (worker != null) {
+            log.info("Creating refresh token for worker: {}", worker.getUsername());
+            refreshTokenCreated = refreshTokenService.createRefreshToken(worker.getUsername(), worker.getEmail());
+        }
+
+        if (refreshTokenCreated == null) {
+            log.error("Error creating refresh token.");
+            throw new RuntimeException("Error creating refresh token.");
         }
 
         String token = jwtTokenProvider.generateToken(authentication);
@@ -182,9 +208,17 @@ public class AuthServiceImpl implements AuthService {
 
         LoginJWTResponse jwtResponse = LoginJWTResponse.builder()
                 .jwtToken(token)
-                .user(response).build();
-
+                .user(response)
+                .refreshTokenDto(refreshTokenCreated)
+                .build();
         return jwtResponse;
+    }
+
+
+
+    private boolean isEmail(String usernameOrEmail) {
+        // Simple check to see if the string is an email
+        return usernameOrEmail.contains("@");
     }
 
 

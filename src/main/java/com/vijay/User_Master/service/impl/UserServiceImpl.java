@@ -23,6 +23,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -168,4 +169,7 @@ public class UserServiceImpl implements UserService {
         }
         return mapper.map(userDetails, UserResponse.class);
     }
+
+
+
 }
