@@ -3,10 +3,7 @@ package com.vijay.User_Master.controller;
 import com.vijay.User_Master.Helper.ExceptionUtil;
 import com.vijay.User_Master.config.security.CustomUserDetailsService;
 import com.vijay.User_Master.config.security.JwtTokenProvider;
-import com.vijay.User_Master.dto.JwtResponse;
-import com.vijay.User_Master.dto.RefreshTokenDto;
-import com.vijay.User_Master.dto.RefreshTokenRequest;
-import com.vijay.User_Master.dto.UserResponse;
+import com.vijay.User_Master.dto.*;
 import com.vijay.User_Master.service.RefreshTokenService;
 import com.vijay.User_Master.service.UserService;
 import lombok.AllArgsConstructor;
@@ -35,13 +32,19 @@ public class RefreshTokenController {
         RefreshTokenDto refreshToken = refreshTokenService.findByToken(request.getRefreshToken());
         RefreshTokenDto verifiedRefreshToken = refreshTokenService.verifyRefreshToken(refreshToken);
         UserResponse user = refreshTokenService.getUser(verifiedRefreshToken);
+        WorkerResponse worker = refreshTokenService.getWorker(verifiedRefreshToken); // Add this line
 
         log.info("Refresh Token: {}", refreshToken);
         log.info("Verified Refresh Token: {}", verifiedRefreshToken);
         log.info("User: {}", user);
+        log.info("Worker: {}", worker); // Add logging for worker
+
+        // Determine if the refresh token belongs to a user or worker
+        String usernameOrEmail = (user != null) ? user.getUsername() : worker.getUsername();
+        String email = (user != null) ? user.getEmail() : worker.getEmail();
 
         // Re-generate JWT token
-        UserDetails userDetails = customUserDetailsService.loadUserByUsernameOrEmail(user.getUsername(), user.getEmail()); // Ensure this is not null
+        UserDetails userDetails = customUserDetailsService.loadUserByUsernameOrEmail(usernameOrEmail, email); // Ensure this is not null
         log.info("User Details: {}", userDetails);
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
@@ -50,16 +53,20 @@ public class RefreshTokenController {
         log.info("New JWT Token: {}", newJwtToken);
 
         // Create new refresh token
-        RefreshTokenDto newRefreshTokenDto = refreshTokenService.createRefreshToken(user.getUsername(), user.getEmail());
+        RefreshTokenDto newRefreshTokenDto = refreshTokenService.createRefreshToken(usernameOrEmail, email);
         log.info("New Refresh Token: {}", newRefreshTokenDto);
 
         JwtResponse jwtResponse = JwtResponse.builder()
                 .jwtToken(newJwtToken)
                 .refreshTokenDto(newRefreshTokenDto)
-                .user(user).build();
+                .user(user)
+                .worker(worker) // Add worker to the response if applicable
+                .build();
         log.info("JWT Response: {}", jwtResponse);
+
         return ExceptionUtil.createBuildResponse(jwtResponse, HttpStatus.OK);
     }
+
 
 
 

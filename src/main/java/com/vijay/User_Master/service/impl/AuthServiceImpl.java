@@ -167,26 +167,40 @@ public class AuthServiceImpl implements AuthService {
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(req.getUsernameOrEmail());
 
-        Worker worker = workerRepository.findByEmail(req.getUsernameOrEmail());
+        // Check if the input is an email or username
+        User user = null;
+        Worker worker = null;
+        if (isEmail(req.getUsernameOrEmail())) {
+            user = userRepository.findByEmail(req.getUsernameOrEmail());
+            worker = workerRepository.findByEmail(req.getUsernameOrEmail());
+        } else {
+            user = userRepository.findByUsername(req.getUsernameOrEmail());
+            worker = workerRepository.findByEmail(req.getUsernameOrEmail());
+        }
+
         if (worker != null && (worker.getAccountStatus() == null || !worker.getAccountStatus().getIsActive())) {
             log.warn("Account status is null or inactive for worker ID: {}", worker.getId());
             throw new BadApiRequestException("Account is not active. Please activate your account.");
         }
-        // Check if the input is an email or username
-        User user = null;
-        if (isEmail(req.getUsernameOrEmail())) {
-            user = userRepository.findByEmail(req.getUsernameOrEmail());
-        } else {
-            user = userRepository.findByUsername(req.getUsernameOrEmail());
-        }
-
-
         if (user != null && (user.getAccountStatus() == null || !user.getAccountStatus().getIsActive())) {
             log.warn("Account status is null or inactive for user ID: {}", user.getId());
             throw new BadApiRequestException("Account is not active. Please activate your account.");
         }
+
         // Create new refresh token
-        RefreshTokenDto refreshTokenCreated = refreshTokenService.createRefreshToken(user.getUsername(), user.getEmail());
+        RefreshTokenDto refreshTokenCreated = null;
+        if (user != null) {
+            log.info("Creating refresh token for user: {}", user.getUsername());
+            refreshTokenCreated = refreshTokenService.createRefreshToken(user.getUsername(), user.getEmail());
+        } else if (worker != null) {
+            log.info("Creating refresh token for worker: {}", worker.getUsername());
+            refreshTokenCreated = refreshTokenService.createRefreshToken(worker.getUsername(), worker.getEmail());
+        }
+
+        if (refreshTokenCreated == null) {
+            log.error("Error creating refresh token.");
+            throw new RuntimeException("Error creating refresh token.");
+        }
 
         String token = jwtTokenProvider.generateToken(authentication);
 
@@ -199,6 +213,8 @@ public class AuthServiceImpl implements AuthService {
                 .build();
         return jwtResponse;
     }
+
+
 
     private boolean isEmail(String usernameOrEmail) {
         // Simple check to see if the string is an email

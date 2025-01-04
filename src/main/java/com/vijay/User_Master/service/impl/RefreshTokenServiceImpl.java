@@ -2,11 +2,14 @@ package com.vijay.User_Master.service.impl;
 
 import com.vijay.User_Master.dto.RefreshTokenDto;
 import com.vijay.User_Master.dto.UserResponse;
+import com.vijay.User_Master.dto.WorkerResponse;
 import com.vijay.User_Master.entity.RefreshToken;
 import com.vijay.User_Master.entity.User;
+import com.vijay.User_Master.entity.Worker;
 import com.vijay.User_Master.exceptions.ResourceNotFoundException;
 import com.vijay.User_Master.repository.RefreshTokenRepository;
 import com.vijay.User_Master.repository.UserRepository;
+import com.vijay.User_Master.repository.WorkerRepository;
 import com.vijay.User_Master.service.RefreshTokenService;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -23,25 +26,35 @@ import java.util.UUID;
 public class RefreshTokenServiceImpl implements RefreshTokenService {
     private RefreshTokenRepository refreshTokenRepository;
     private UserRepository userRepository;
+    private WorkerRepository workerRepository;
     private ModelMapper mapper;
 
     @Override
-    public RefreshTokenDto createRefreshToken(String username,String email) {
-        log.info("Creating refresh token for: {}", username);
+    public RefreshTokenDto createRefreshToken(String usernameOrEmail, String email) {
+        log.info("Creating refresh token for: {}", usernameOrEmail);
 
-        // Find user by username or email
-        User user = userRepository.findByUsernameOrEmail(username, email)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", username));
+        // Find user or worker by username or email
+        User user = userRepository.findByUsernameOrEmail(usernameOrEmail, email).orElse(null);
+        Worker worker = workerRepository.findByEmail(email);
 
-        // Check if a refresh token already exists for the user
-        RefreshToken refreshToken = refreshTokenRepository.findByUser(user).orElse(null);
+        if (user == null && worker == null) {
+            throw new ResourceNotFoundException("User or Worker", "identifier", usernameOrEmail);
+        }
+
+        // Create common refresh token information
+        String identifier = (user != null) ? user.getUsername() : worker.getUsername();
+        String emails = (user != null) ? user.getEmail() : worker.getEmail();
+
+        // Check if a refresh token already exists for the user or worker
+        RefreshToken refreshToken = refreshTokenRepository.findByUsername(identifier).orElse(null);
         if (refreshToken == null) {
             // Create new refresh token if none exists
             log.info("No existing refresh token found, creating a new one.");
             refreshToken = RefreshToken.builder()
-                    .user(user)
+                    .username(identifier)
                     .token(UUID.randomUUID().toString())
                     .expiryDate(Instant.now().plusSeconds(2 * 24 * 60 * 60)) // Token expires in 2 days
+                    .email(emails)
                     .build();
         } else {
             // Update the existing refresh token
@@ -50,13 +63,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
             refreshToken.setExpiryDate(Instant.now().plusSeconds(2 * 24 * 60 * 60));
         }
 
-        // Save the refresh token to the repository
-        RefreshToken savedToken = refreshTokenRepository.save(refreshToken);
-        log.info("Refresh token saved successfully: {}", savedToken.getToken());
-
-        // Convert to DTO and return
-        return mapper.map(savedToken, RefreshTokenDto.class);
+        refreshTokenRepository.save(refreshToken);
+        return mapper.map(refreshToken, RefreshTokenDto.class);
     }
+
 
     @Override
     public RefreshTokenDto findByToken(String token) {
@@ -106,6 +116,22 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
         // Convert to DTO and return
         return mapper.map(user, UserResponse.class);
+    }
+
+    @Override
+    public WorkerResponse getWorker(RefreshTokenDto refreshTokenDto) {
+        log.info("Getting worker for refresh token: {}", refreshTokenDto.getToken());
+
+        // Find refresh token by token string
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenDto.getToken())
+                .orElseThrow(() -> new ResourceNotFoundException("refresh-token", "id", refreshTokenDto.getToken()));
+
+        // Get the worker associated with the refresh token
+        Worker worker = refreshToken.getWorker();
+        log.info("Worker found: {}", worker.getUsername());
+
+        // Convert to DTO and return
+        return mapper.map(worker, WorkerResponse.class);
     }
 }
 
