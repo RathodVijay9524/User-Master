@@ -118,6 +118,13 @@ public class UserServiceImpl implements UserService {
                     throw new UserAlreadyExistsException("Username is already taken");
                 }
                 user.setUsername(request.getUsername());
+                log.info("This image name from user-service: {}",request.getImageName());
+            }
+
+            // Ensure imageName is always set
+            if (request.getImageName() != null) {
+                user.setImageName(request.getImageName());
+                log.info("Image name set from request: {}", request.getImageName());
             }
 
             if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
