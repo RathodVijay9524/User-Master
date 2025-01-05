@@ -27,7 +27,7 @@ public class HomeController {
     private AuthService authService;
 
     //http://localhost:9091/api/v1/home/verify?uid=10&&code=39796311-9f1d-4fa7-8773-cbc3a03aacc2
-    @GetMapping("/verify")
+    @GetMapping("/verify")  // verify registration
     public ResponseEntity<?> verifyUserAccount(@RequestParam Long uid, @RequestParam String code) throws Exception {
         Boolean verifyAccount = homeService.verifyAccount(uid, code);
         if (verifyAccount)
@@ -53,8 +53,6 @@ public class HomeController {
     // you can reset password using email or username
     // if he or see gets temp password on mail then ,user can create new password using temp password
     //http://localhost:9091/api/v1/home/unlock-account?usernameOrEmail=vijayrathod9524@gmail.com
-
-
     @PostMapping("/unlock-account")
     public ResponseEntity<?> unlockAccount(@RequestBody UnlockForm form, @RequestParam String usernameOrEmail) {
         try {
