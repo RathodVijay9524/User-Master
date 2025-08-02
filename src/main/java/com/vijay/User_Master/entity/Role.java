@@ -32,5 +32,8 @@ public class Role extends BaseModel {
     private String name;
     private boolean isActive;
     private boolean isDeleted;
+ /*   @ManyToMany(mappedBy = "roles")
+    @JsonBackReference
+    private Set<User> users;*/
 
 }

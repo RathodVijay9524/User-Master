@@ -1,9 +1,8 @@
 package com.vijay.User_Master.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Setter
@@ -20,4 +19,10 @@ public class AccountStatus {
     private Boolean isActive;
     private String verificationCode;
     private String passwordResetToken;
+
+
+    @Override
+    public String toString() {
+        return "AccountStatus{id=" + id + ", isActive=" + isActive + '}';
+    }
 }

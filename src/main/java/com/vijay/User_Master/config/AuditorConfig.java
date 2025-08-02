@@ -6,17 +6,25 @@ import org.springframework.data.domain.AuditorAware;
 
 import java.util.Optional;
 
+
+
 public class AuditorConfig implements AuditorAware<Integer> {
+
+
+
     @Override
     public Optional<Integer> getCurrentAuditor() {
         CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
         return Optional.of(Math.toIntExact(loggedInUser.getId()));
     }
 
+
+
     // you are running first time application then this method un-comments this.
 
-    /*@Override
-    public Optional<Integer> getCurrentAuditor() {
+
+/*    @Override
+    public  Optional<Integer> getCurrentAuditor() {
         try {
             CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
             if (loggedInUser != null) {
@@ -30,5 +38,6 @@ public class AuditorConfig implements AuditorAware<Integer> {
             return Optional.of(2);
         }
     }*/
+
 
 }
