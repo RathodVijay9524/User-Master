@@ -40,7 +40,8 @@ public class WebSecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/register/**",
                                 "/api/v1/home/**",
-                                "/api/v1/tokens/**"
+                                "/api/v1/tokens/**",
+                                "/api/users/image/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -65,4 +66,3 @@ public class WebSecurityConfig {
         return configuration.getAuthenticationManager();
     }
 }
-

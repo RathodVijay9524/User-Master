@@ -1,6 +1,5 @@
 package com.vijay.User_Master.service.impl;
 
-
 import com.vijay.User_Master.Helper.Helper;
 import com.vijay.User_Master.dto.PageableResponse;
 import com.vijay.User_Master.dto.UserRequest;
@@ -165,6 +164,54 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserResponse updateUser(Long id, UserRequest request) {
+        User user=userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("USER", "ID", id));
+
+        // Update username
+        if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
+            if (userRepository.existsByUsername(request.getUsername())) {
+                throw new UserAlreadyExistsException("Username is already taken");
+            }
+            user.setUsername(request.getUsername());
+            log.info("This image name from user-service: {}", request.getImageName());
+        }
+
+        // Set image name
+        if (request.getImageName() != null) {
+            user.setImageName(request.getImageName());
+            log.info("Image name set from request: {}", request.getImageName());
+        }
+
+        // Update email
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new UserAlreadyExistsException("Email is already in use");
+            }
+            user.setEmail(request.getEmail());
+        }
+
+        // Update roles
+        if (request.getRoles() != null && !request.getRoles().isEmpty()) {
+            Set<Role> roles = request.getRoles().stream()
+                    .map(roleName -> roleRepository.findByName(String.valueOf(roleName))
+                            .orElseThrow(() -> new RuntimeException("Role not found with name: " + roleName)))
+                    .collect(Collectors.toSet());
+            user.setRoles(roles);
+        }
+
+        // Update password
+        if (request.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        // Save and return updated user
+        userRepository.save(user);
+        return mapper.map(user, UserResponse.class);
+
+    }
+
+    @Override
     public UserResponse getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -238,68 +285,37 @@ public class UserServiceImpl implements UserService {
         });
     }
 
-
-    @Override
-    public CompletableFuture<UserResponse> update(Long id, UserRequest request) {
-        return CompletableFuture.supplyAsync(() -> {
-            User user = userRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("USER", "ID", id));
-
-            // Update user fields only if they are provided in the request
-            if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
-                if (userRepository.existsByUsername(request.getUsername())) {
-                    throw new UserAlreadyExistsException("Username is already taken");
-                }
-                user.setUsername(request.getUsername());
-                log.info("This image name from user-service: {}",request.getImageName());
-            }
-
-            // Ensure imageName is always set
-            if (request.getImageName() != null) {
-                user.setImageName(request.getImageName());
-                log.info("Image name set from request: {}", request.getImageName());
-            }
-
-            if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
-                if (userRepository.existsByEmail(request.getEmail())) {
-                    throw new UserAlreadyExistsException("Email is already in use");
-                }
-                user.setEmail(request.getEmail());
-            }
-
-            if (request.getRoles() != null && !request.getRoles().isEmpty()) {
-                Set<Role> roles = request.getRoles().stream()
-                        .map(roleName -> roleRepository.findByName(String.valueOf(roleName))
-                                .orElseThrow(() -> new RuntimeException("Role not found with name: " + roleName)))
-                        .collect(Collectors.toSet());
-                user.setRoles(roles);
-            }
-
-            if (request.getPassword() != null) {
-                user.setPassword(passwordEncoder.encode(request.getPassword()));
-            }
-
-            // Save the updated user in the repository
-            userRepository.save(user);
-            return mapper.map(user, UserResponse.class);
-        });
-    }
-
     @Override
     public CompletableFuture<UserResponse> getById(Long aLong) {
         return null;
     }
 
+
+
+
     @Override
     public CompletableFuture<Set<UserResponse>> getAll() {
+        return CompletableFuture.supplyAsync(() -> {
+            List<User> users = userRepository.findAll();
+            return users.stream()
+                    .map(user -> mapper.map(user, UserResponse.class))
+                    .collect(Collectors.toSet());
+        });
+    }
+
+    @Override
+    public CompletableFuture<UserResponse> update(Long aLong, UserRequest request) {
         return null;
     }
+
     @Override
     public CompletableFuture<Boolean> delete(Long aLong) {
-        return null;
+        return CompletableFuture.supplyAsync(() -> {
+            if(!userRepository.existsById(aLong)) {
+                throw new ResourceNotFoundException("USER", "ID", aLong);
+            }
+            userRepository.deleteById(aLong);
+            return true;
+        });
     }
-
-
-
-
 }

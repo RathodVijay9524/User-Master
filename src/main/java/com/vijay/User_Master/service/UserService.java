@@ -15,6 +15,7 @@ import java.util.Set;
 
 public interface UserService extends iCrudService<UserRequest, UserResponse,Long> {
 
+    UserResponse updateUser(Long id, UserRequest request);
     UserResponse getCurrentUser();
     void updateAccountStatus(Long userId, Boolean isActive);
     UserResponse getByIdForUser(Long aLong);

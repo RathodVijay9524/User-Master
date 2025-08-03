@@ -35,6 +35,7 @@ public class CustomUserDetails implements UserDetails {
     private String phoNo;
     private boolean isDeleted;
     private LocalDateTime deletedOn;
+    private String imageName;
     @JsonIgnore
     private List<Worker> workers;
     private AccountStatus accountStatus;
@@ -51,6 +52,7 @@ public class CustomUserDetails implements UserDetails {
                 user.getPhoNo(),
                 user.isDeleted(),
                 user.getDeletedOn(),
+                user.getImageName(),
                 user.getWorkers(),
                 user.getAccountStatus()
         );
@@ -67,6 +69,7 @@ public class CustomUserDetails implements UserDetails {
                 worker.getPhoNo(),
                 worker.isDeleted(),
                 worker.getDeletedOn(),
+                worker.getImageName(),
                 null, // Workers don't have associated workers, so set it to null
                 worker.getAccountStatus()
         );
@@ -89,4 +92,3 @@ public class CustomUserDetails implements UserDetails {
         return username;
     }
 }
-

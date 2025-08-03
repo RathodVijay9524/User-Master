@@ -113,8 +113,8 @@ public class UserController {
     }
 
     /*
-    *  api/users/active - only active user finds
-    * */
+     *  api/users/active - only active user finds
+     * */
 
     @GetMapping("/active")
     public ResponseEntity<PageableResponse<UserResponse>> getAllActiveUsers(
@@ -220,21 +220,32 @@ public class UserController {
             String imageName = fileService.uploadFile(image, "images/users/");
             log.info("Uploaded file with name: {}", imageName);
 
-            CompletableFuture<UserResponse> userFuture = userService.getById(loggedInUser.getId());
-            UserResponse userResponse = userFuture.get(); // Handle ExecutionException / InterruptedException
+            UserResponse userResponse = userService.getByIdForUser(loggedInUser.getId());
+
             log.info("Fetched user details for user ID: {}", loggedInUser.getId());
 
             userResponse.setRoles(activeRoles); // Ensure this role exists in the database
             userResponse.setImageName(imageName);
             log.info("Set image name and roles for user.");
 
-            UserRequest userRequest = mapper.map(userResponse, UserRequest.class);
+            // Manual mapping to avoid role conversion issues
+            UserRequest userRequest = UserRequest.builder()
+                    .name(userResponse.getName())
+                    .username(userResponse.getUsername())
+                    .email(userResponse.getEmail())
+                    .phoNo(userResponse.getPhoNo())
+                    .about(userResponse.getAbout())
+                    .imageName(imageName)
+                    .isDeleted(userResponse.isDeleted())
+                    .deletedOn(userResponse.getDeletedOn())
+                    .roles(activeRoles.stream()
+                            .map(Role::getName)
+                            .collect(Collectors.toSet()))
+                    .accountStatus(null) // Skip accountStatus to avoid type mismatch
+                    .build();
 
             log.info("This image name from userRequest: {}",userRequest.getImageName());
-
-
-            CompletableFuture<UserResponse> updateUserFuture = userService.update(loggedInUser.getId(), userRequest);
-            UserResponse updatedUser = updateUserFuture.get(); // Ensure the update is completed
+            UserResponse updatedUser = userService.updateUser(loggedInUser.getId(), userRequest);
             log.info("Updated user details in the database.");
 
             ImageResponse imageResponse = ImageResponse.builder()
@@ -273,9 +284,7 @@ public class UserController {
     public void serveUserImage(@PathVariable Long userId, HttpServletResponse response) throws IOException, ExecutionException, InterruptedException {
         log.info("Received request to serve image for user ID: {}", userId);
 
-        CompletableFuture<UserResponse> userFuture = userService.getById(userId);
-        UserResponse userResponse = userFuture.get(); // Handle ExecutionException / InterruptedException
-
+        UserResponse userResponse = userService.getByIdForUser(userId);
         String imageName = userResponse.getImageName();
         log.info("User image name: {}", imageName);
 

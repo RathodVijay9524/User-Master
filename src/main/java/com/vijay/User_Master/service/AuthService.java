@@ -18,6 +18,7 @@ public interface AuthService {
 
     boolean unlockAccount(UnlockForm form, String usernameOrEmail);
     // For  password
+
     boolean forgotPassword(ForgotPasswordForm from, String email);
     boolean changePassword(ChangePasswordForm form);
     boolean existsByUsernameOrEmail(String usernameOrEmail);
