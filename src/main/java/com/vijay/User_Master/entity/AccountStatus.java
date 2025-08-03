@@ -1,9 +1,8 @@
 package com.vijay.User_Master.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Setter
@@ -26,15 +25,6 @@ public class AccountStatus {
 
     // Token used for password reset via email link
     private String passwordResetToken;
-
-    /*
-     * OTP (One-Time Password) used for resetting the password via email link.
-     * When a user requests to reset their password, an OTP is sent to their email address.
-     * The email contains a link that directs the user to a frontend page where they can enter the OTP.
-     * If the OTP verification is successful, the user is then navigated to a page where they can reset their password.
-     * The reset password page allows the user to enter a new password and confirm it before submitting.
-     */
-    private String otp;
 }
 
 

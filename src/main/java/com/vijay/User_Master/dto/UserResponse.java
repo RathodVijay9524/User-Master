@@ -24,6 +24,5 @@ public class UserResponse {
     private boolean isDeleted;
     private LocalDateTime deletedOn;
     private Set<Role> roles;
-
-
+    private AccountStatusResponse accountStatus;
 }

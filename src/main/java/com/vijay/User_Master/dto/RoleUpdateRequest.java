@@ -5,15 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class RoleResponse {
-
-    private Long id;
+public class RoleUpdateRequest {
     private String name;
-    private boolean isActive;
-    private boolean isDeleted;
+    private Boolean isActive;
 }
