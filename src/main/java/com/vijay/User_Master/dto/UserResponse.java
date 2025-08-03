@@ -4,6 +4,7 @@ import com.vijay.User_Master.entity.Role;
 import com.vijay.User_Master.entity.User;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Getter
@@ -18,8 +19,10 @@ public class UserResponse {
     private String email;
     private String password;
     private String phoNo;
+    private String about;
+    private String imageName;
     private boolean isDeleted;
+    private LocalDateTime deletedOn;
     private Set<Role> roles;
-
-
+    private AccountStatusResponse accountStatus;
 }

@@ -68,6 +68,7 @@ public class UserMasterApplication {
                     .username("user")
                     .password(passwordEncoder.encode("user"))
                     .roles(userRoles)
+
                     .build();
 
             User normalUser = User.builder()

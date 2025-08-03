@@ -16,11 +16,12 @@ import java.util.concurrent.CompletableFuture;
 
 public interface AuthService {
 
-    boolean   unlockAccount(UnlockForm form, String usernameOrEmail);
+    boolean unlockAccount(UnlockForm form, String usernameOrEmail);
     // For  password
     boolean forgotPassword(ForgotPasswordForm from, String email);
     boolean changePassword(ChangePasswordForm form);
     boolean existsByUsernameOrEmail(String usernameOrEmail);
+    boolean existsByUsernameOrEmailFields(String username, String email);
     LoginJWTResponse login(LoginRequest req);
     CompletableFuture<Object> registerForAdminUser(UserRequest request,String url);
     UserResponse registerForNormalUser(UserRequest request);

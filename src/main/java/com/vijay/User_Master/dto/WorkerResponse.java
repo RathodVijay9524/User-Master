@@ -1,12 +1,10 @@
 package com.vijay.User_Master.dto;
 
-import com.vijay.User_Master.entity.AccountStatus;
-import com.vijay.User_Master.entity.User;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.vijay.User_Master.entity.Role;
 
+import lombok.*;
+
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Data
@@ -14,7 +12,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Builder
 public class WorkerResponse {
-
+    private Long id;
     private String name;
 
     private String username;
@@ -22,7 +20,34 @@ public class WorkerResponse {
     private String email;
     private String password;
     private String phoNo;
+
+    private String about;
+
+
+    private String imageName;
     private boolean isDeleted;
-    private Set<String> roles; // Roles are strings like "ROLE_ADMIN"
+    private LocalDateTime deletedOn;
+    private Set<Role> roles; // Roles are strings like "ROLE_ADMIN"
+    private AccountStatus accountStatus;
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Getter
+    @Setter
+    public static class RoleDto {
+        private Long id;
+        private String name;
+    }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Getter
+    @Setter
+    public static class AccountStatus {
+        private Long id;
+        private Boolean isActive;
+    }
 
 }

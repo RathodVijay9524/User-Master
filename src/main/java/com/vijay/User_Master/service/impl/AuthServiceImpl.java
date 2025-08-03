@@ -6,6 +6,7 @@ import com.vijay.User_Master.config.security.CustomUserDetails;
 import com.vijay.User_Master.config.security.JwtTokenProvider;
 import com.vijay.User_Master.config.security.model.LoginJWTResponse;
 import com.vijay.User_Master.config.security.model.LoginRequest;
+import com.vijay.User_Master.dto.RefreshTokenDto;
 import com.vijay.User_Master.dto.UserRequest;
 import com.vijay.User_Master.dto.UserResponse;
 import com.vijay.User_Master.dto.form.*;
@@ -20,6 +21,7 @@ import com.vijay.User_Master.repository.RoleRepository;
 import com.vijay.User_Master.repository.UserRepository;
 import com.vijay.User_Master.repository.WorkerRepository;
 import com.vijay.User_Master.service.AuthService;
+import com.vijay.User_Master.service.RefreshTokenService;
 import com.vijay.User_Master.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
@@ -57,6 +59,7 @@ public class AuthServiceImpl implements AuthService {
     private AuthenticationManager authenticationManager;
     private EmailUtils emailUtils;
     private EmailService emailService;
+    private final RefreshTokenService refreshTokenService;
 
     /*
      *     **************  when user register that time need to send temp password
@@ -144,7 +147,10 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(user);
         return true;
     }
-
+    @Override
+    public boolean existsByUsernameOrEmailFields(String username, String email) {
+     return true;
+    }
     @Override
     public boolean existsByUsernameOrEmail(String usernameOrEmail) {
         return userRepository.existsByUsername(usernameOrEmail)
@@ -161,10 +167,39 @@ public class AuthServiceImpl implements AuthService {
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(req.getUsernameOrEmail());
 
-        User user = userRepository.findByEmail(req.getUsernameOrEmail());
-        if (!user.getAccountStatus().getIsActive()) {
-            log.warn("Account not active for user ID: {}", user.getId());
+        // Check if the input is an email or username
+        User user = null;
+        Worker worker = null;
+        if (isEmail(req.getUsernameOrEmail())) {
+            user = userRepository.findByEmail(req.getUsernameOrEmail());
+            worker = workerRepository.findByEmail(req.getUsernameOrEmail());
+        } else {
+            user = userRepository.findByUsername(req.getUsernameOrEmail());
+            worker = workerRepository.findByEmail(req.getUsernameOrEmail());
+        }
+
+        if (worker != null && (worker.getAccountStatus() == null || !worker.getAccountStatus().getIsActive())) {
+            log.warn("Account status is null or inactive for worker ID: {}", worker.getId());
             throw new BadApiRequestException("Account is not active. Please activate your account.");
+        }
+        if (user != null && (user.getAccountStatus() == null || !user.getAccountStatus().getIsActive())) {
+            log.warn("Account status is null or inactive for user ID: {}", user.getId());
+            throw new BadApiRequestException("Account is not active. Please activate your account.");
+        }
+
+        // Create new refresh token
+        RefreshTokenDto refreshTokenCreated = null;
+        if (user != null) {
+            log.info("Creating refresh token for user: {}", user.getUsername());
+            refreshTokenCreated = refreshTokenService.createRefreshToken(user.getUsername(), user.getEmail());
+        } else if (worker != null) {
+            log.info("Creating refresh token for worker: {}", worker.getUsername());
+            refreshTokenCreated = refreshTokenService.createRefreshToken(worker.getUsername(), worker.getEmail());
+        }
+
+        if (refreshTokenCreated == null) {
+            log.error("Error creating refresh token.");
+            throw new RuntimeException("Error creating refresh token.");
         }
 
         String token = jwtTokenProvider.generateToken(authentication);
@@ -173,9 +208,17 @@ public class AuthServiceImpl implements AuthService {
 
         LoginJWTResponse jwtResponse = LoginJWTResponse.builder()
                 .jwtToken(token)
-                .user(response).build();
-
+                .user(response)
+                .refreshTokenDto(refreshTokenCreated)
+                .build();
         return jwtResponse;
+    }
+
+
+
+    private boolean isEmail(String usernameOrEmail) {
+        // Simple check to see if the string is an email
+        return usernameOrEmail.contains("@");
     }
 
 
@@ -275,9 +318,10 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void sendEmailPasswordReset(String email, HttpServletRequest request) throws Exception {
+        // Fetch user from the database using email
         User user = userRepository.findByEmail(email);
         if (ObjectUtils.isEmpty(user)) {
-            log.error("Invalid email: {}", email);
+            log.error("Invalid email...!!!: {}", email);
             throw new BadApiRequestException("Invalid email");
         }
 
@@ -286,12 +330,19 @@ public class AuthServiceImpl implements AuthService {
         user.getAccountStatus().setPasswordResetToken(passwordResetToken);
         User updatedUser = userRepository.save(user);
 
+        // Get the base URL of your API (e.g., http://localhost:9091)
         String url = CommonUtils.getUrl(request);
-        sendEmailRequest(updatedUser, url);
+
+        // Frontend Base URL
+        String frontendBaseUrl = "http://localhost:5173";
+
+        // Send the email with the reset link
+        sendEmailRequest(updatedUser, frontendBaseUrl);
         log.info("Password reset email sent to: {}", email);
     }
 
     private void sendEmailRequest(User user, String url) throws Exception {
+        // Email message template with placeholders
         String message = "Hi <b>[[username]]</b>, "
                 + "<br><p>You have requested to reset your password.</p>"
                 + "<p>Click the link below to reset your password:</p>"
@@ -300,10 +351,12 @@ public class AuthServiceImpl implements AuthService {
                 + "or you did not make the request.</p><br>"
                 + "Thanks,<br>Vijay Rathod";
 
+        // Replace placeholders with actual user details and URL
         message = message.replace("[[username]]", user.getName());
-        message = message.replace("[[url]]", url + "/api/v1/home/reset-password?uid=" + user.getId() + "&token="
+        message = message.replace("[[url]]", url + "/reset-password?uid=" + user.getId() + "&token="
                 + user.getAccountStatus().getPasswordResetToken());
 
+        // Create an EmailForm object to represent the email
         EmailForm emailRequest = EmailForm.builder()
                 .to(user.getEmail())
                 .title("Password Reset")
@@ -311,10 +364,11 @@ public class AuthServiceImpl implements AuthService {
                 .message(message)
                 .build();
 
-        // Send password reset email to user
+        // Send the password reset email
         emailService.sendEmail(emailRequest);
         log.info("Password reset email sent to user: {}", user.getEmail());
     }
+
 
     @Override
     public void verifyPasswordResetLink(Long uid, String code) throws Exception {

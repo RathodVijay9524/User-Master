@@ -30,4 +30,15 @@ public class CustomUserDetailsService implements UserDetailsService {
             return CustomUserDetails.build(worker);
         }
     }
+    public UserDetails loadUserByUsernameOrEmail(String username, String email) {
+        Optional<User> userOptional = userRepository.findByUsernameOrEmail(username, email);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            return CustomUserDetails.build(user);
+        } else {
+            Optional<Worker> workerOptional = workerRepository.findByUsernameOrEmail(username, email);
+            Worker worker = workerOptional.orElseThrow(() -> new UsernameNotFoundException("Worker not found with username: " + username + " or email: " + email));
+            return CustomUserDetails.build(worker);
+        }
+    }
 }
