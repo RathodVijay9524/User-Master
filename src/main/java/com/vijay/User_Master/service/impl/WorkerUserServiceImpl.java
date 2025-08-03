@@ -16,6 +16,7 @@ import com.vijay.User_Master.repository.FavouriteEntryRepo;
 import com.vijay.User_Master.repository.UserRepository;
 import com.vijay.User_Master.repository.WorkerRepository;
 import com.vijay.User_Master.service.WorkerUserService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
 
 import java.time.LocalDateTime;
@@ -195,6 +197,78 @@ public class WorkerUserServiceImpl implements WorkerUserService {
         return favouriteWorkers.stream()
                 .map((worker) -> mapper.map(worker, FavouriteEntryResponse.class))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public PageableResponse<WorkerResponse> getWorkersBySuperUserId(Long superUserId, int pageNumber, int pageSize, String sortBy, String sortDir) {
+        CustomUserDetails loggedInUser = CommonUtils.getLoggedInUser();
+
+        if (!superUserId.equals(loggedInUser.getId())) {
+            throw new IllegalArgumentException("You are not authorized to access this user's workers.");
+        }
+
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
+
+        Page<Worker> workerPage = workerRepository.findByUser_Id(superUserId, pageable);
+
+        return Helper.getPageableResponse(workerPage, WorkerResponse.class);
+    }
+
+    @Override
+    public PageableResponse<WorkerResponse> getWorkersBySuperUserWithFilter(Long superUserId, String filter, Pageable pageable) {
+        Page<Worker> page = switch (filter.toLowerCase()) {
+            case "active" ->
+                    workerRepository.findByUser_IdAndIsDeletedFalseAndAccountStatus_IsActiveTrue(superUserId, pageable);
+            case "deleted" -> workerRepository.findByUser_IdAndIsDeletedTrue(superUserId, pageable);
+            case "expired" ->
+                    workerRepository.findByUser_IdAndIsDeletedFalseAndAccountStatus_IsActiveFalse(superUserId, pageable);
+            default -> workerRepository.findByUser_Id(superUserId, pageable);
+        };
+
+        return Helper.getPageableResponse(page, WorkerResponse.class);
+    }
+
+    @Override
+    public Page<WorkerResponse> getWorkersWithFilter(Long superUserId, Boolean isDeleted, Boolean isActive, String keyword, Pageable pageable) {
+        Page<Worker> workers;
+
+        if (StringUtils.hasText(keyword)) {
+            workers = workerRepository.searchWorkersBySuperUserWithKeyword(keyword, isDeleted, isActive, superUserId, pageable);
+        } else {
+            if (isDeleted != null && isActive != null) {
+                workers = workerRepository.findByUser_IdAndIsDeletedAndAccountStatus_IsActive(superUserId, isDeleted, isActive, pageable);
+            } else if (isDeleted != null) {
+                workers = workerRepository.findByUser_IdAndIsDeleted(superUserId, isDeleted, pageable);
+            } else if (isActive != null) {
+                workers = workerRepository.findByUser_IdAndAccountStatus_IsActive(superUserId, isActive, pageable);
+            } else {
+                workers = workerRepository.findByUser_Id(superUserId, pageable);
+            }
+        }
+
+        return workers.map(worker -> mapper.map(worker, WorkerResponse.class));
+    }
+
+    @Override
+    public void updateAccountStatus(Long userId, Boolean isActive) {
+
+        Worker worker = workerRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+
+        AccountStatus accountStatus = worker.getAccountStatus();
+        if (accountStatus == null) {
+            accountStatus = new AccountStatus(); // New status
+        }
+
+        accountStatus.setIsActive(isActive); // update the status
+        worker.setAccountStatus(accountStatus); // assign to user
+
+        workerRepository.save(worker); // cascade should handle persist/update
+
     }
 
 

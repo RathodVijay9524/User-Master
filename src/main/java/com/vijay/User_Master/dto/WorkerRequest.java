@@ -21,6 +21,8 @@ public class WorkerRequest {
     private String email;
     private String password;
     private String phoNo;
+    private String about;
+    private String imageName;
     private boolean isDeleted;
     private LocalDateTime deletedOn;
     private Set<String> roles; // Roles are strings like "ROLE_ADMIN"

@@ -30,28 +30,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // get JWT token from http request
-        String token = getTokenFromRequest(request);
+        try {
+            String token = getTokenFromRequest(request);
 
-        // validate token
-        if(StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)){
+            if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
 
-            // get username from token
-            String username = jwtTokenProvider.getUsername(token);
+                String username = jwtTokenProvider.getUsername(token);
 
-            // load the user associated with token
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                if (username != null) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                    userDetails,
-                    null,
-                    userDetails.getAuthorities()
-            );
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities());
 
-            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            }
+        } catch (Exception ex) {
+            // log error for debugging
+            System.out.println("JWT Filter Error: " + ex.getMessage());
+            ex.printStackTrace();
         }
 
         filterChain.doFilter(request, response);

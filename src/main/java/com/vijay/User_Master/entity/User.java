@@ -1,6 +1,7 @@
 package com.vijay.User_Master.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,6 +35,9 @@ public class User  {
     @Column(nullable = false)
     private String password;
     private String phoNo;
+    @Column(length = 1000)
+    private String about;
+    private String imageName;
     private boolean isDeleted;
     private LocalDateTime deletedOn;
 
@@ -47,7 +51,7 @@ public class User  {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private List<Worker> workers;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "status_id")
     private AccountStatus accountStatus;
 }

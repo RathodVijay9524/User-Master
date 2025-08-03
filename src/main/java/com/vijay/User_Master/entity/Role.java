@@ -5,10 +5,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.Set;
@@ -17,6 +14,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 @Entity
 @Table(name = "roles")
 @EntityListeners(AuditingEntityListener.class)
@@ -32,5 +30,8 @@ public class Role extends BaseModel {
     private String name;
     private boolean isActive;
     private boolean isDeleted;
+ /*   @ManyToMany(mappedBy = "roles")
+    @JsonBackReference
+    private Set<User> users;*/
 
 }
