@@ -20,9 +20,4 @@ public class AccountStatus {
     private String verificationCode;
     private String passwordResetToken;
 
-
-    @Override
-    public String toString() {
-        return "AccountStatus{id=" + id + ", isActive=" + isActive + '}';
-    }
 }
