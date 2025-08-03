@@ -32,6 +32,10 @@ public class Worker extends BaseModel {
     private String phoNo;
     private boolean isDeleted;
     private LocalDateTime deletedOn;
+    @Column(length = 1000)
+    private String about;
+
+    private String imageName;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "workers_roles",

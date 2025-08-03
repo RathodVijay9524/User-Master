@@ -318,9 +318,10 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void sendEmailPasswordReset(String email, HttpServletRequest request) throws Exception {
+        // Fetch user from the database using email
         User user = userRepository.findByEmail(email);
         if (ObjectUtils.isEmpty(user)) {
-            log.error("Invalid email: {}", email);
+            log.error("Invalid email...!!!: {}", email);
             throw new BadApiRequestException("Invalid email");
         }
 
@@ -329,12 +330,19 @@ public class AuthServiceImpl implements AuthService {
         user.getAccountStatus().setPasswordResetToken(passwordResetToken);
         User updatedUser = userRepository.save(user);
 
+        // Get the base URL of your API (e.g., http://localhost:9091)
         String url = CommonUtils.getUrl(request);
-        sendEmailRequest(updatedUser, url);
+
+        // Frontend Base URL
+        String frontendBaseUrl = "http://localhost:5173";
+
+        // Send the email with the reset link
+        sendEmailRequest(updatedUser, frontendBaseUrl);
         log.info("Password reset email sent to: {}", email);
     }
 
     private void sendEmailRequest(User user, String url) throws Exception {
+        // Email message template with placeholders
         String message = "Hi <b>[[username]]</b>, "
                 + "<br><p>You have requested to reset your password.</p>"
                 + "<p>Click the link below to reset your password:</p>"
@@ -343,10 +351,12 @@ public class AuthServiceImpl implements AuthService {
                 + "or you did not make the request.</p><br>"
                 + "Thanks,<br>Vijay Rathod";
 
+        // Replace placeholders with actual user details and URL
         message = message.replace("[[username]]", user.getName());
-        message = message.replace("[[url]]", url + "/api/v1/home/reset-password?uid=" + user.getId() + "&token="
+        message = message.replace("[[url]]", url + "/reset-password?uid=" + user.getId() + "&token="
                 + user.getAccountStatus().getPasswordResetToken());
 
+        // Create an EmailForm object to represent the email
         EmailForm emailRequest = EmailForm.builder()
                 .to(user.getEmail())
                 .title("Password Reset")
@@ -354,10 +364,11 @@ public class AuthServiceImpl implements AuthService {
                 .message(message)
                 .build();
 
-        // Send password reset email to user
+        // Send the password reset email
         emailService.sendEmail(emailRequest);
         log.info("Password reset email sent to user: {}", user.getEmail());
     }
+
 
     @Override
     public void verifyPasswordResetLink(Long uid, String code) throws Exception {

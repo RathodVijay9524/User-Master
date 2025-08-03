@@ -35,6 +35,9 @@ public class User  {
     @Column(nullable = false)
     private String password;
     private String phoNo;
+    @Column(length = 1000)
+    private String about;
+    private String imageName;
     private boolean isDeleted;
     private LocalDateTime deletedOn;
 

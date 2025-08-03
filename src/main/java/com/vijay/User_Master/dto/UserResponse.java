@@ -19,6 +19,8 @@ public class UserResponse {
     private String email;
     private String password;
     private String phoNo;
+    private String about;
+    private String imageName;
     private boolean isDeleted;
     private LocalDateTime deletedOn;
     private Set<Role> roles;

@@ -16,8 +16,24 @@ public class AccountStatus {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    private Boolean isActive;
-    private String verificationCode;
-    private String passwordResetToken;
 
+    // Indicates whether the account is active or not
+    private Boolean isActive;
+
+    // Code used for verifying the account during registration
+    private String verificationCode;
+
+    // Token used for password reset via email link
+    private String passwordResetToken;
 }
+
+
+/*
+ *   for reset password by otp with mail link, send otp,
+ *   by clicking on link get front-end side page you can enter opt and submit
+ *   if verification is success
+ *   then you can navigate to next page like reset password -
+ *   then you can enter newPassword and confirm password
+ *
+ * */
+
