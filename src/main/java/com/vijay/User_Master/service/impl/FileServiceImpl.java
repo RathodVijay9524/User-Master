@@ -8,16 +8,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 @Service
 public class FileServiceImpl implements FileService {
 
-    private static final Logger logger = LoggerFactory.getLogger(FileServiceImpl.class);
+    private Logger logger = LoggerFactory.getLogger(FileServiceImpl.class);
 
     @Override
     public String uploadFile(MultipartFile file, String path) throws IOException {
+        //abc.png
         String originalFilename = file.getOriginalFilename();
         logger.info("Filename : {}", originalFilename);
 
@@ -29,35 +32,43 @@ public class FileServiceImpl implements FileService {
         if (!extension.equalsIgnoreCase(".png") &&
                 !extension.equalsIgnoreCase(".jpg") &&
                 !extension.equalsIgnoreCase(".jpeg")) {
-            throw new BadApiRequestException("File type not allowed: " + extension);
+            throw new BadApiRequestException("File with this " + extension + " not allowed !!");
         }
 
-        String filename = UUID.randomUUID().toString() + extension;
-        Path folderPath = Paths.get(path).toAbsolutePath().normalize();
-        Path fullPath = folderPath.resolve(filename);
+        String filename = UUID.randomUUID().toString();
+        String fileNameWithExtension = filename + extension;
+        
+        // Get the project root directory (where the application is running from)
+        String projectRoot = System.getProperty("user.dir");
+        Path folderPath = Paths.get(projectRoot, path).toAbsolutePath().normalize();
+        Path fullPath = folderPath.resolve(fileNameWithExtension);
+
+        logger.info("full image path: {} ", fullPath);
+        logger.info("file extension is {} ", extension);
 
         // Ensure directory exists
         Files.createDirectories(folderPath);
 
         // Upload the file
         try (InputStream inputStream = file.getInputStream()) {
-            Files.copy(inputStream, fullPath, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(inputStream, fullPath);
         }
 
-        logger.info("full image path: {}", fullPath);
-        logger.info("file extension is {}", extension);
-        return filename;
+        return fileNameWithExtension;
     }
 
     @Override
     public InputStream getResource(String path, String name) throws FileNotFoundException {
-        String fullPath = path + File.separator + name;
-        Path filePath = Paths.get(fullPath).toAbsolutePath().normalize();
+        // Get the project root directory (where the application is running from)
+        String projectRoot = System.getProperty("user.dir");
+        Path uploadPath = Paths.get(projectRoot, path).toAbsolutePath().normalize();
+        Path filePath = uploadPath.resolve(name.trim());
+        
         logger.info("Loading resource: {}", filePath);
 
         File file = filePath.toFile();
         if (!file.exists()) {
-            throw new FileNotFoundException("File not found: " + fullPath);
+            throw new FileNotFoundException("File not found: " + filePath);
         }
 
         return new FileInputStream(file);
@@ -105,7 +116,7 @@ public class FileServiceImpl implements FileService {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            
+
             deleted = file.delete();
             if (deleted) {
                 logger.info("File deletion successful after GC: {}", deleted);
@@ -135,7 +146,7 @@ public class FileServiceImpl implements FileService {
             // Strategy 5: Mark for deletion on exit as fallback
             file.deleteOnExit();
             logger.warn("File marked for deletion on exit: {}", filePath);
-            
+
             return false;
 
         } catch (Exception e) {
@@ -143,5 +154,4 @@ public class FileServiceImpl implements FileService {
             return false;
         }
     }
-
 }
