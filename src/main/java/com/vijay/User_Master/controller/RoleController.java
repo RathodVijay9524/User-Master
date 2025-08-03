@@ -4,7 +4,7 @@ import com.vijay.User_Master.Helper.ExceptionUtil;
 import com.vijay.User_Master.dto.RoleRequest;
 import com.vijay.User_Master.dto.RoleUpdateRequest;
 import com.vijay.User_Master.dto.UserRoleRequest;
-import com.vijay.User_Master.service.RoleService;
+import com.vijay.User_Master.service.RoleManagementService;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -12,117 +12,137 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.concurrent.CompletableFuture;
-
+/**
+ * Role Management Controller
+ * Handles all role management operations with synchronous processing
+ * to ensure proper JWT token authentication and Spring Security context
+ */
 @RestController
 @RequestMapping("/api/roles")
 @AllArgsConstructor
 @Log4j2
 public class RoleController {
 
-    private final RoleService roleService;
+    private final RoleManagementService roleManagementService;
+
+    // ============= BASIC ROLE CRUD OPERATIONS =============
 
     /**
      * Create a new role.
-     * This endpoint creates a new role based on the provided request and returns the created role.
+     * Only accessible by ADMIN users.
      *
      * @param roleRequest The request containing role details.
-     * @return A CompletableFuture containing the response with the created role.
+     * @return ResponseEntity containing the created role.
      */
     @PostMapping
-    public CompletableFuture<ResponseEntity<?>> createRole(@RequestBody RoleRequest roleRequest) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> createRole(@RequestBody RoleRequest roleRequest) {
         log.info("Received request to create role with name: {}", roleRequest.getName());
 
-        // Call the service to create the role asynchronously
-        return roleService.create(roleRequest)
-                .thenApply(roleResponse -> {
-                    // Log successful role creation and return the response
-                    log.info("Role created successfully with name: {}", roleResponse.getName());
-                    return ExceptionUtil.createBuildResponse(roleResponse, HttpStatus.CREATED); // Ensure correct response type
-                });
+        try {
+            var roleResponse = roleManagementService.createRole(roleRequest);
+            log.info("Role created successfully with name: {}", roleResponse.getName());
+            return ExceptionUtil.createBuildResponse(roleResponse, HttpStatus.CREATED);
+        } catch (Exception e) {
+            log.error("Error creating role: {}", e.getMessage());
+            return ExceptionUtil.createBuildResponse("Error creating role: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     /**
      * Get Role by ID.
-     * This endpoint fetches a role by its ID.
+     * Only accessible by ADMIN users.
      *
      * @param id The ID of the role to fetch.
-     * @return A CompletableFuture containing the role details.
+     * @return ResponseEntity containing the role details.
      */
-    @GetMapping("/{id}")
-    public CompletableFuture<ResponseEntity<?>> getRoleById(@PathVariable Long id) {
+
+
+    @GetMapping("/{id:\\d+}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getRoleById(@PathVariable Long id) {
         log.info("Received request to fetch role with ID: {}", id);
 
-        // Call the service to fetch the role asynchronously
-        return roleService.getById(id)
-                .thenApply(roleResponse -> {
-                    log.info("Role with ID '{}' fetched successfully", id);
-                    return ExceptionUtil.createBuildResponse(roleResponse, HttpStatus.OK); // Ensure correct response type
-                });
+        try {
+            var roleResponse = roleManagementService.getRoleById(id);
+            log.info("Role with ID '{}' fetched successfully", id);
+            return ExceptionUtil.createBuildResponse(roleResponse, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Error fetching role: {}", e.getMessage());
+            return ExceptionUtil.createBuildResponse("Error fetching role: " + e.getMessage(), HttpStatus.NOT_FOUND);
+        }
     }
 
     /**
      * Get all roles.
-     * This endpoint fetches all roles from the system.
+     * Only accessible by ADMIN users.
      *
-     * @return A CompletableFuture containing all roles.
+     * @return ResponseEntity containing all roles.
      */
     @GetMapping
-    public CompletableFuture<ResponseEntity<?>> getAllRoles() {
-        log.info("Received request to fetch all roles.");
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAllRoles() {
+        log.info("Received request to fetch all roles");
 
-        // Call the service to fetch all roles asynchronously
-        return roleService.getAll()
-                .thenApply(roles -> {
-                    log.info("Fetched {} roles successfully", roles.size());
-                    return ExceptionUtil.createBuildResponse(roles, HttpStatus.OK); // Ensure correct response type
-                });
+        try {
+            var roles = roleManagementService.getAllRoles();
+            log.info("Fetched {} roles successfully", roles.size());
+            return ExceptionUtil.createBuildResponse(roles, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Error fetching roles: {}", e.getMessage());
+            return ExceptionUtil.createBuildResponse("Error fetching roles: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
      * Update Role.
-     * This endpoint updates an existing role based on the provided ID and request data.
+     * Only accessible by ADMIN users.
      *
      * @param id      The ID of the role to update.
      * @param request The request containing the updated role data.
-     * @return A CompletableFuture containing the updated role.
+     * @return ResponseEntity containing the updated role.
      */
     @PutMapping("/{id}")
-    public CompletableFuture<ResponseEntity<?>> updateRole(@PathVariable Long id, @RequestBody RoleRequest request) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateRole(@PathVariable Long id, @RequestBody RoleRequest request) {
         log.info("Received request to update role with ID: {}", id);
 
-        // Call the service to update the role asynchronously
-        return roleService.update(id, request)
-                .thenApply(roleResponse -> {
-                    log.info("Role with ID '{}' updated successfully", id);
-                    return ExceptionUtil.createBuildResponse(roleResponse, HttpStatus.OK); // Ensure correct response type
-                });
+        try {
+            var roleResponse = roleManagementService.updateRole(id, request);
+            log.info("Role with ID '{}' updated successfully", id);
+            return ExceptionUtil.createBuildResponse(roleResponse, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Error updating role: {}", e.getMessage());
+            return ExceptionUtil.createBuildResponse("Error updating role: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     /**
      * Delete Role.
-     * This endpoint deletes a role based on the provided ID.
+     * Only accessible by ADMIN users.
      *
      * @param id The ID of the role to delete.
-     * @return A CompletableFuture containing a boolean indicating success.
+     * @return ResponseEntity indicating success.
      */
     @DeleteMapping("/{id}")
-    public CompletableFuture<ResponseEntity<?>> deleteRole(@PathVariable Long id) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteRole(@PathVariable Long id) {
         log.info("Received request to delete role with ID: {}", id);
 
-        // Call the service to delete the role asynchronously
-        return roleService.delete(id)
-                .thenApply(success -> {
-                    log.info("Role with ID '{}' deleted successfully", id);
-                    return ExceptionUtil.createBuildResponse(success, HttpStatus.OK); // Ensure correct response type
-                });
+        try {
+            boolean success = roleManagementService.deleteRole(id);
+            log.info("Role with ID '{}' deleted successfully", id);
+            return ExceptionUtil.createBuildResponse("Role deleted successfully", HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Error deleting role: {}", e.getMessage());
+            return ExceptionUtil.createBuildResponse("Error deleting role: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
-    // ============= NEW ROLE MANAGEMENT ENDPOINTS =============
+    // ============= ROLE MANAGEMENT ENDPOINTS =============
 
     /**
      * Get all active roles.
-     * This endpoint fetches all active roles from the system.
      * Only accessible by ADMIN users.
      *
      * @return ResponseEntity containing all active roles.
@@ -133,18 +153,17 @@ public class RoleController {
         log.info("Received request to fetch all active roles");
         
         try {
-            var activeRoles = roleService.getAllActiveRoles();
+            var activeRoles = roleManagementService.getAllActiveRoles();
             log.info("Fetched {} active roles successfully", activeRoles.size());
             return ExceptionUtil.createBuildResponse(activeRoles, HttpStatus.OK);
         } catch (Exception e) {
             log.error("Error fetching active roles: {}", e.getMessage());
-            return ExceptionUtil.createBuildResponse("Error fetching active roles", HttpStatus.INTERNAL_SERVER_ERROR);
+            return ExceptionUtil.createBuildResponse("Error fetching active roles: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
      * Update role details.
-     * This endpoint updates role name and/or status.
      * Only accessible by ADMIN users.
      *
      * @param roleId The ID of the role to update.
@@ -157,7 +176,7 @@ public class RoleController {
         log.info("Received request to update role details for role ID: {}", roleId);
         
         try {
-            var updatedRole = roleService.updateRole(roleId, updateRequest);
+            var updatedRole = roleManagementService.updateRoleDetails(roleId, updateRequest);
             log.info("Role with ID '{}' details updated successfully", roleId);
             return ExceptionUtil.createBuildResponse(updatedRole, HttpStatus.OK);
         } catch (Exception e) {
@@ -168,7 +187,6 @@ public class RoleController {
 
     /**
      * Activate a role.
-     * This endpoint activates a role by setting isActive to true.
      * Only accessible by ADMIN users.
      *
      * @param roleId The ID of the role to activate.
@@ -180,7 +198,7 @@ public class RoleController {
         log.info("Received request to activate role with ID: {}", roleId);
         
         try {
-            roleService.activateRole(roleId);
+            roleManagementService.activateRole(roleId);
             log.info("Role with ID '{}' activated successfully", roleId);
             return ExceptionUtil.createBuildResponse("Role activated successfully", HttpStatus.OK);
         } catch (Exception e) {
@@ -191,7 +209,6 @@ public class RoleController {
 
     /**
      * Deactivate a role.
-     * This endpoint deactivates a role by setting isActive to false.
      * Only accessible by ADMIN users.
      *
      * @param roleId The ID of the role to deactivate.
@@ -203,7 +220,7 @@ public class RoleController {
         log.info("Received request to deactivate role with ID: {}", roleId);
         
         try {
-            roleService.deactivateRole(roleId);
+            roleManagementService.deactivateRole(roleId);
             log.info("Role with ID '{}' deactivated successfully", roleId);
             return ExceptionUtil.createBuildResponse("Role deactivated successfully", HttpStatus.OK);
         } catch (Exception e) {
@@ -216,7 +233,6 @@ public class RoleController {
 
     /**
      * Assign roles to a user.
-     * This endpoint assigns new roles to a user while keeping existing roles.
      * Only accessible by ADMIN users.
      *
      * @param userRoleRequest The request containing user ID and role IDs to assign.
@@ -228,7 +244,7 @@ public class RoleController {
         log.info("Received request to assign roles to user ID: {}", userRoleRequest.getUserId());
         
         try {
-            var updatedUser = roleService.assignRolesToUser(userRoleRequest);
+            var updatedUser = roleManagementService.assignRolesToUser(userRoleRequest);
             log.info("Roles assigned successfully to user ID: {}", userRoleRequest.getUserId());
             return ExceptionUtil.createBuildResponse(updatedUser, HttpStatus.OK);
         } catch (Exception e) {
@@ -239,7 +255,6 @@ public class RoleController {
 
     /**
      * Remove roles from a user.
-     * This endpoint removes specified roles from a user.
      * Only accessible by ADMIN users.
      *
      * @param userRoleRequest The request containing user ID and role IDs to remove.
@@ -251,7 +266,7 @@ public class RoleController {
         log.info("Received request to remove roles from user ID: {}", userRoleRequest.getUserId());
         
         try {
-            var updatedUser = roleService.removeRolesFromUser(userRoleRequest);
+            var updatedUser = roleManagementService.removeRolesFromUser(userRoleRequest);
             log.info("Roles removed successfully from user ID: {}", userRoleRequest.getUserId());
             return ExceptionUtil.createBuildResponse(updatedUser, HttpStatus.OK);
         } catch (Exception e) {
@@ -262,7 +277,6 @@ public class RoleController {
 
     /**
      * Replace user roles.
-     * This endpoint replaces all existing roles of a user with new ones.
      * Only accessible by ADMIN users.
      *
      * @param userRoleRequest The request containing user ID and new role IDs.
@@ -274,7 +288,7 @@ public class RoleController {
         log.info("Received request to replace roles for user ID: {}", userRoleRequest.getUserId());
         
         try {
-            var updatedUser = roleService.replaceUserRoles(userRoleRequest);
+            var updatedUser = roleManagementService.replaceUserRoles(userRoleRequest);
             log.info("Roles replaced successfully for user ID: {}", userRoleRequest.getUserId());
             return ExceptionUtil.createBuildResponse(updatedUser, HttpStatus.OK);
         } catch (Exception e) {
@@ -285,7 +299,6 @@ public class RoleController {
 
     /**
      * Get user roles.
-     * This endpoint fetches all roles assigned to a specific user.
      * Only accessible by ADMIN users.
      *
      * @param userId The ID of the user whose roles to fetch.
@@ -297,7 +310,7 @@ public class RoleController {
         log.info("Received request to fetch roles for user ID: {}", userId);
         
         try {
-            var userRoles = roleService.getUserRoles(userId);
+            var userRoles = roleManagementService.getUserRoles(userId);
             log.info("Fetched {} roles for user ID: {}", userRoles.size(), userId);
             return ExceptionUtil.createBuildResponse(userRoles, HttpStatus.OK);
         } catch (Exception e) {
@@ -308,7 +321,6 @@ public class RoleController {
 
     /**
      * Check if role exists.
-     * This endpoint checks if a role exists by ID.
      * Only accessible by ADMIN users.
      *
      * @param roleId The ID of the role to check.
@@ -320,12 +332,34 @@ public class RoleController {
         log.info("Received request to check if role exists with ID: {}", roleId);
         
         try {
-            boolean exists = roleService.roleExists(roleId);
+            boolean exists = roleManagementService.roleExists(roleId);
             log.info("Role existence check for ID '{}': {}", roleId, exists);
             return ExceptionUtil.createBuildResponse(exists, HttpStatus.OK);
         } catch (Exception e) {
             log.error("Error checking role existence: {}", e.getMessage());
             return ExceptionUtil.createBuildResponse("Error checking role existence: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Get roles by name.
+     * Only accessible by ADMIN users.
+     *
+     * @param roleName The name of the role to search for.
+     * @return ResponseEntity containing matching roles.
+     */
+    @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getRolesByName(@RequestParam String roleName) {
+        log.info("Received request to search roles by name: {}", roleName);
+        
+        try {
+            var roles = roleManagementService.getRolesByName(roleName);
+            log.info("Found {} roles with name: {}", roles.size(), roleName);
+            return ExceptionUtil.createBuildResponse(roles, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Error searching roles by name: {}", e.getMessage());
+            return ExceptionUtil.createBuildResponse("Error searching roles: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 }

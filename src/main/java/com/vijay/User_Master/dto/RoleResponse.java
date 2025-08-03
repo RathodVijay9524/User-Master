@@ -16,6 +16,4 @@ public class RoleResponse {
     private String name;
     private boolean isActive;
     private boolean isDeleted;
-
-
 }
