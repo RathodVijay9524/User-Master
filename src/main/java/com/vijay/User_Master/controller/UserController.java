@@ -211,24 +211,45 @@ public class UserController {
 
             Set<Role> roles = loggedInUser.getRoles();
 
-            // Filter roles to ensure only active and non-deleted roles are set
+            // Filter active roles
             Set<Role> activeRoles = roles.stream()
                     .filter(role -> role.isActive() && !role.isDeleted())
                     .collect(Collectors.toSet());
-            log.info("Retrieved active roles for logged-in user: {}", activeRoles);
+            log.info("Retrieved active roles: {}", activeRoles);
 
-            String imageName = fileService.uploadFile(image, "images/users/");
-            log.info("Uploaded file with name: {}", imageName);
-
+            // Get user details
             UserResponse userResponse = userService.getByIdForUser(loggedInUser.getId());
+            log.info("Fetched user details for ID: {}", loggedInUser.getId());
 
-            log.info("Fetched user details for user ID: {}", loggedInUser.getId());
+            // Delete old image if exists
+            String existingImageName = userResponse.getImageName();
+            String imageUploadPath = "images/users/";
+            if (existingImageName != null && !existingImageName.trim().isEmpty()) {
+                try {
+                    Thread.sleep(100); // Give OS time to release any file locks
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
 
-            userResponse.setRoles(activeRoles); // Ensure this role exists in the database
+                boolean deleted = fileService.deleteFile(existingImageName.trim(), imageUploadPath);
+                if (deleted) {
+                    log.info("Deleted existing image: {}", existingImageName);
+                } else {
+                    log.warn("Could not delete existing image: {}", existingImageName);
+                }
+            }
+
+
+
+            // Upload new image
+            String imageName = fileService.uploadFile(image, imageUploadPath);
+            log.info("Uploaded new image: {}", imageName);
+
+            userResponse.setRoles(activeRoles);
             userResponse.setImageName(imageName);
-            log.info("Set image name and roles for user.");
+            log.info("Updated userResponse with new image and roles.");
 
-            // Manual mapping to avoid role conversion issues
+            // Prepare request object
             UserRequest userRequest = UserRequest.builder()
                     .name(userResponse.getName())
                     .username(userResponse.getUsername())
@@ -241,13 +262,16 @@ public class UserController {
                     .roles(activeRoles.stream()
                             .map(Role::getName)
                             .collect(Collectors.toSet()))
-                    .accountStatus(null) // Skip accountStatus to avoid type mismatch
+                    .accountStatus(null) // Skipping for now
                     .build();
 
-            log.info("This image name from userRequest: {}",userRequest.getImageName());
-            UserResponse updatedUser = userService.updateUser(loggedInUser.getId(), userRequest);
-            log.info("Updated user details in the database.");
+            log.info("Prepared userRequest with image: {}", userRequest.getImageName());
 
+            // Update user in DB
+            UserResponse updatedUser = userService.updateUser(loggedInUser.getId(), userRequest);
+            log.info("User updated successfully in DB.");
+
+            // Return success response
             ImageResponse imageResponse = ImageResponse.builder()
                     .imageName(imageName)
                     .success(true)
@@ -255,10 +279,9 @@ public class UserController {
                     .status(HttpStatus.CREATED)
                     .build();
 
-            log.info("Image upload process completed successfully.");
             return new ResponseEntity<>(imageResponse, HttpStatus.CREATED);
         } catch (RuntimeException e) {
-            log.error("Role not found: ", e);
+            log.error("Role processing error: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ImageResponse.builder()
                             .imageName(null)
@@ -267,7 +290,7 @@ public class UserController {
                             .status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .build());
         } catch (Exception e) {
-            log.error("Unexpected error occurred during image upload: ", e);
+            log.error("Unexpected error during image upload: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ImageResponse.builder()
                             .imageName(null)
@@ -294,6 +317,8 @@ public class UserController {
         StreamUtils.copy(resource, response.getOutputStream());
         log.info("Image served successfully for user ID: {}", userId);
     }
+
+
 
 
 }

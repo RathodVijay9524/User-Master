@@ -13,4 +13,9 @@ public interface FileService {
 
     InputStream getResource(String path,String name) throws FileNotFoundException;
 
+
+    boolean deleteFile(String fileName, String path);
+
+
+
 }
