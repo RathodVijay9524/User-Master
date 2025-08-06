@@ -17,6 +17,11 @@ public class RefreshTokenDto {
     private String username; // Added Username as Identifier
     private String email;
 
+    private Long userId;     // ID of the User if token belongs to User
+
+    private Long workerId;
+
+
 
     // Method to check if token is expired
     /*public boolean isExpired() {

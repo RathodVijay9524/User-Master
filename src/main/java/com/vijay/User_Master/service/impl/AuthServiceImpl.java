@@ -172,10 +172,10 @@ public class AuthServiceImpl implements AuthService {
         Worker worker = null;
         if (isEmail(req.getUsernameOrEmail())) {
             user = userRepository.findByEmail(req.getUsernameOrEmail());
-            worker = workerRepository.findByEmail(req.getUsernameOrEmail());
+            worker = workerRepository.findByEmail(req.getUsernameOrEmail()).orElse(null);
         } else {
             user = userRepository.findByUsername(req.getUsernameOrEmail());
-            worker = workerRepository.findByEmail(req.getUsernameOrEmail());
+            worker = workerRepository.findByEmail(req.getUsernameOrEmail()).orElse(null);
         }
 
         if (worker != null && (worker.getAccountStatus() == null || !worker.getAccountStatus().getIsActive())) {
@@ -189,18 +189,30 @@ public class AuthServiceImpl implements AuthService {
 
         // Create new refresh token
         RefreshTokenDto refreshTokenCreated = null;
+
         if (user != null) {
             log.info("Creating refresh token for user: {}", user.getUsername());
-            refreshTokenCreated = refreshTokenService.createRefreshToken(user.getUsername(), user.getEmail());
+            refreshTokenCreated = refreshTokenService.createRefreshToken(
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getId(),   // <-- Pass userId
+                    null            // <-- WorkerId is null
+            );
         } else if (worker != null) {
             log.info("Creating refresh token for worker: {}", worker.getUsername());
-            refreshTokenCreated = refreshTokenService.createRefreshToken(worker.getUsername(), worker.getEmail());
+            refreshTokenCreated = refreshTokenService.createRefreshToken(
+                    worker.getUsername(),
+                    worker.getEmail(),
+                    null,           // <-- UserId is null
+                    worker.getId()  // <-- Pass workerId
+            );
         }
 
         if (refreshTokenCreated == null) {
             log.error("Error creating refresh token.");
             throw new RuntimeException("Error creating refresh token.");
         }
+
 
         String token = jwtTokenProvider.generateToken(authentication);
 

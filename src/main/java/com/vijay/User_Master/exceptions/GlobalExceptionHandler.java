@@ -1,6 +1,10 @@
 package com.vijay.User_Master.exceptions;
 
 import com.vijay.User_Master.Helper.ExceptionUtil;
+import com.vijay.User_Master.exceptions.exception.InvalidTokenException;
+import com.vijay.User_Master.exceptions.exception.TokenExpiredException;
+import com.vijay.User_Master.exceptions.exception.TokenNotFoundException;
+import com.vijay.User_Master.exceptions.exception.TokenRefreshException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -19,91 +23,114 @@ import java.util.NoSuchElementException;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Logger instance for the class
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException ex) {
-        logger.error("Bad credentials for user: {}", ex.getMessage(), ex);
-        return ExceptionUtil.createErrorResponseMessage("Incorrect username or password", HttpStatus.UNAUTHORIZED);
+    // ============= TOKEN EXCEPTIONS ============= //
+    @ExceptionHandler(TokenNotFoundException.class)
+    public ResponseEntity<?> handleTokenNotFoundException(TokenNotFoundException ex) {
+        logger.warn("Token not found: {}", ex.getMessage());
+        return ExceptionUtil.createErrorResponseMessage(
+                "Authentication token not found",
+                HttpStatus.NOT_FOUND
+        );
     }
 
-    // Handler for UserAlreadyExistsException (specific to user creation)
+    // ===== Token Refresh Specific Exceptions =====
+    @ExceptionHandler(TokenRefreshException.class)
+    public ResponseEntity<?> handleTokenRefreshException(TokenRefreshException ex) {
+        logger.error("Token refresh failed: {}", ex.getMessage());
+        return ExceptionUtil.createErrorResponseMessage(
+                "Token refresh failed. Please login again",
+                HttpStatus.FORBIDDEN
+        );
+    }
+
+    @ExceptionHandler(TokenExpiredException.class)
+    public ResponseEntity<?> handleTokenExpiredException(TokenExpiredException ex) {
+        logger.warn("Token expired: {}", ex.getMessage());
+        return ExceptionUtil.createErrorResponseMessage(
+                "Session expired. Please login again",
+                HttpStatus.UNAUTHORIZED
+        );
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<?> handleInvalidTokenException(InvalidTokenException ex) {
+        logger.warn("Invalid token: {}", ex.getMessage());
+        return ExceptionUtil.createErrorResponseMessage(
+                "Invalid authentication token",
+                HttpStatus.FORBIDDEN
+        );
+    }
+
+    // ============= EXISTING EXCEPTIONS ============= //
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<?> handleBadCredentialsException(BadCredentialsException ex) {
+        logger.error("Bad credentials: {}", ex.getMessage());
+        return ExceptionUtil.createErrorResponseMessage(
+                "Invalid username or password",
+                HttpStatus.UNAUTHORIZED
+        );
+    }
+
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<?> handleUserAlreadyExistsException(UserAlreadyExistsException ex, WebRequest request) {
-        // Log the exception details
-        logger.error("User already exists: {}", ex.getMessage(), ex);
-        // Create and return the error response using ExceptionUtil
+    public ResponseEntity<?> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
+        logger.error("User exists: {}", ex.getMessage());
         return ExceptionUtil.createErrorResponseMessage(
                 ex.getMessage(),
                 HttpStatus.BAD_REQUEST
         );
     }
 
-    // Handle Resource Not Found Exception
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> handleResourceNotFound(ResourceNotFoundException ex) {
-        // Log the exception details
-        logger.error("Resource not found: {}", ex.getMessage(), ex);
-        // Return the error response
-        return ExceptionUtil.createErrorResponseMessage(ex.getMessage(), HttpStatus.NOT_FOUND);
+        logger.error("Resource missing: {}", ex.getMessage());
+        return ExceptionUtil.createErrorResponseMessage(
+                ex.getMessage(),
+                HttpStatus.NOT_FOUND
+        );
     }
 
-    // Handle Validation Exceptions (e.g., @Valid errors)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException ex) {
-        // Log the validation errors
-        logger.error("Validation error: {}", ex.getMessage(), ex);
+        logger.error("Validation error: {}", ex.getMessage());
 
-        // Extract field errors into a map for cleaner response
-        Map<String, String> validationErrors = new HashMap<>();
+        Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error ->
-                validationErrors.put(error.getField(), error.getDefaultMessage()));
+                errors.put(error.getField(), error.getDefaultMessage()));
 
-        // Return the validation errors response
-        return ExceptionUtil.createErrorResponse(validationErrors, HttpStatus.BAD_REQUEST);
+        return ExceptionUtil.createErrorResponse(
+                errors,
+                HttpStatus.BAD_REQUEST
+        );
     }
 
-    // Handle Generic Exceptions (catch-all for unhandled exceptions)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGlobalException(Exception ex) {
-        // Log the unexpected error
-        logger.error("Unexpected error occurred: {}", ex.getMessage(), ex);
-
-        // Return the generic error response
-        return ExceptionUtil.createErrorResponseMessage("An unexpected error occurred: " + ex.getMessage(),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+        logger.error("System error: {}", ex.getMessage(), ex);
+        return ExceptionUtil.createErrorResponseMessage(
+                "An unexpected error occurred",
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
     }
 
     @ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<?> handleNullPointerException(Exception e) {
-        logger.error("GlobalExceptionHandler :: handleNullPointerException ::", e.getMessage());
-        // return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        return ExceptionUtil.createErrorResponseMessage(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<?> handleNullPointerException(NullPointerException ex) {
+        logger.error("Null pointer: {}", ex.getMessage(), ex);
+        return ExceptionUtil.createErrorResponseMessage(
+                "A system error occurred",
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
     }
 
-    //handle bad api exception
     @ExceptionHandler(BadApiRequestException.class)
     public ResponseEntity<?> handleBadApiRequest(BadApiRequestException ex) {
-        logger.info("Bad api request");
-        return ExceptionUtil.createErrorResponseMessage(ex.getMessage(), HttpStatus.BAD_REQUEST);
-
+        logger.error("Bad API request: {}", ex.getMessage());
+        return ExceptionUtil.createErrorResponseMessage(
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST
+        );
     }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException e) {
-        logger.error("GlobalExceptionHandler :: handleException ::", e.getMessage());
-        return ExceptionUtil.createErrorResponseMessage(e.getMessage(), HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<GenericResponse> handleIllegalStateException(IllegalStateException ex) {
-        logger.error("GlobalExceptionHandler :: handleIllegalStateException ::", ex.getMessage());
-        return (ResponseEntity<GenericResponse>) ExceptionUtil.createErrorResponseMessage(ex.getMessage(), HttpStatus.BAD_REQUEST);
-    }
-
-
 }
 
 

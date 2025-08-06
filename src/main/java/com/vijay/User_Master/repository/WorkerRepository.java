@@ -16,7 +16,8 @@ import java.util.Optional;
 public interface WorkerRepository extends JpaRepository<Worker, Long>, JpaSpecificationExecutor<Worker> {
 
 
-    Worker findByEmail(String email);
+   // Worker findByEmail(String email);
+    Optional<Worker> findByEmail(String email);
 
     Optional<Worker> findByUsernameOrEmail(String username, String email);
 
