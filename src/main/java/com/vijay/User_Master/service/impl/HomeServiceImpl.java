@@ -26,15 +26,18 @@ public class HomeServiceImpl implements HomeService {
         User user = userRepo.findById(uid)
                 .orElseThrow(() -> new ResourceNotFoundException("USER", "ID", uid));
 
-        if (user.getAccountStatus().getVerificationCode() == null) {
-            throw new BadApiRequestException("Account already verified");
+        AccountStatus status = user.getAccountStatus();
+
+        if (status.getVerificationCode() == null) {
+            log.info("Account already verified for user ID: {}", uid);
+            return false; // You could also return true if you want to silently pass
         }
-        if (user.getAccountStatus().getVerificationCode().equals(verificationCode)) {
-            AccountStatus status = user.getAccountStatus();
+
+        if (status.getVerificationCode().equals(verificationCode)) {
             status.setIsActive(true);
             status.setVerificationCode(null);
-            User verrifiedUser = userRepo.save(user);
-            sendMailSuccessMessageToUser(verrifiedUser);
+            User verifiedUser = userRepo.save(user);
+            sendMailSuccessMessageToUser(verifiedUser);
             log.info("Account verification successful for user ID: {}", uid);
             return true;
         } else {
@@ -49,21 +52,21 @@ public class HomeServiceImpl implements HomeService {
                 .to(verifiedUser.getEmail())
                 .subject("Account Verification Successful")
                 .title("Congratulations " + verifiedUser.getName() + "!")
-                .message(emailBody).build();
+                .message(emailBody)
+                .build();
+
         emailService.sendEmail(emailRequest);
     }
 
     private String buildVerificationSuccessEmail(User verifiedUser) {
-        return "<html>"
-                + "<body>"
-                + "<h3>Congratulations "
-                + verifiedUser.getName()
-                + "!</h3>" + "<p>Your account has been successfully verified.</p>"
+        return "<html><body>"
+                + "<h3>Congratulations " + verifiedUser.getName() + "!</h3>"
+                + "<p>Your account has been successfully verified.</p>"
                 + "<p>You can now enjoy all the features of our service.</p>"
-                + "<p>Best regards,<br/>Vijay Rathod</p>"
-                + "</body>"
-                + "</html>";
+                + "<p>Best regards,<br/>Team</p>"
+                + "</body></html>";
     }
+
 }
 
 

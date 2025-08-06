@@ -16,6 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/home")
 @AllArgsConstructor
@@ -26,14 +29,22 @@ public class HomeController {
 
     private AuthService authService;
 
-    //http://localhost:9091/api/v1/home/verify?uid=10&&code=39796311-9f1d-4fa7-8773-cbc3a03aacc2
-    @GetMapping("/verify")  // verify registration
-    public ResponseEntity<?> verifyUserAccount(@RequestParam Long uid, @RequestParam String code) throws Exception {
-        Boolean verifyAccount = homeService.verifyAccount(uid, code);
-        if (verifyAccount)
-            return ExceptionUtil.createBuildResponseMessage("Account verification success", HttpStatus.OK);
-        return ExceptionUtil.createErrorResponseMessage("Invalid Verification link", HttpStatus.BAD_REQUEST);
+    @GetMapping("/verify")
+    public ResponseEntity<Map<String, Object>> verifyUserAccount(@RequestParam Long uid, @RequestParam String code) throws Exception {
+        boolean verified = homeService.verifyAccount(uid, code);
+
+        Map<String, Object> response = new HashMap<>();
+        if (verified) {
+            response.put("status", "success");
+            response.put("message", "Account verified successfully!");
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("status", "error");
+            response.put("message", "Invalid or expired verification link.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
     }
+
     // you can reset password using email or username
     //http://localhost:9091/api/v1/home/forgot-password?usernameOrEmail=vijayrathod9524@gmail.com
     @PostMapping("/forgot-password")

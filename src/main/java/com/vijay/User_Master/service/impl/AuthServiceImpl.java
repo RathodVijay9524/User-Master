@@ -282,8 +282,11 @@ public class AuthServiceImpl implements AuthService {
                 + "<a href='[[url]]'>Click Here</a> <br><br>" + "Thanks,<br>Enotes.com";
 
         message = message.replace("[[username]]", savedUser.getName());
-        message = message.replace("[[url]]", url + "/api/v1/home/verify?uid=" + savedUser.getId() + "&&code="
-                + savedUser.getAccountStatus().getVerificationCode());
+       /* message = message.replace("[[url]]", url + "/api/v1/home/verify?uid=" + savedUser.getId() + "&&code="
+                + savedUser.getAccountStatus().getVerificationCode());*/
+
+        message = message.replace("[[url]]", "http://localhost:5173/verify?uid=" + savedUser.getId()
+                + "&code=" + savedUser.getAccountStatus().getVerificationCode());
 
         EmailForm emailRequest = EmailForm.builder()
                 .to(savedUser.getEmail())
