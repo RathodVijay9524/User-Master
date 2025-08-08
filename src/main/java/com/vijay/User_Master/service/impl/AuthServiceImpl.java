@@ -138,6 +138,9 @@ public class AuthServiceImpl implements AuthService {
             System.out.println("User not found with email: " + user.getEmail());
             return false;
         }
+        if (form.getOldPassword() == null || form.getOldPassword().isEmpty()) {
+            System.out.println("Old password is null or empty!");
+        }
         if (!passwordEncoder.matches(form.getOldPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Old Password is incorrect ");
         }

@@ -2,8 +2,7 @@ package com.vijay.User_Master.dto.form;
 
 import lombok.*;
 
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder

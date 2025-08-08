@@ -26,7 +26,6 @@ public class HomeController {
 
 
     private HomeService homeService;
-
     private AuthService authService;
 
     @GetMapping("/verify")

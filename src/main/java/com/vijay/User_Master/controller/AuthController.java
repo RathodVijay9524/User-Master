@@ -28,7 +28,7 @@ public class AuthController {
     private final AuthService authService;
 
 
-    @PostMapping("/change-password")
+    @PutMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordForm form) {
         boolean result = authService.changePassword(form);
         if (result) {
