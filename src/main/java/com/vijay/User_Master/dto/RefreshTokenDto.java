@@ -12,7 +12,7 @@ import java.time.Instant;
 @Builder
 public class RefreshTokenDto {
     private int id;
-    private String token;
+    private String refreshToken;
     private Instant expiryDate;
     private String username; // Added Username as Identifier
     private String email;

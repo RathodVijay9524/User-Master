@@ -41,7 +41,11 @@ public class WebSecurityConfig {
                                 "/api/auth/register/**",
                                 "/api/v1/home/**",
                                 "/api/v1/tokens/**",
-                                "/api/users/image/**"
+                                "/api/users/image/**",
+                                // Swagger / OpenAPI endpoints
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

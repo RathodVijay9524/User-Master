@@ -42,7 +42,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     public JwtResponse refreshAccessToken(RefreshTokenRequest request) {
         RefreshTokenDto verifiedToken = verifyRefreshToken(
-                RefreshTokenDto.builder().token(request.getRefreshToken()).build());
+                RefreshTokenDto.builder().refreshToken(request.getRefreshToken()).build());
 
         TokenUserDetails userDetails = resolveTokenUserDetails(verifiedToken);
 
@@ -83,11 +83,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     @Transactional(readOnly = true)
     public RefreshTokenDto verifyRefreshToken(RefreshTokenDto refreshTokenDto) {
-        if (refreshTokenDto == null || refreshTokenDto.getToken() == null) {
+        if (refreshTokenDto == null || refreshTokenDto.getRefreshToken() == null) {
             throw new TokenNotFoundException("Refresh token is null");
         }
 
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenDto.getToken())
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenDto.getRefreshToken())
                 .orElseThrow(() -> new TokenNotFoundException("Refresh token not found"));
 
         if (refreshToken.getExpiryDate().isBefore(Instant.now())) {

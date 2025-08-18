@@ -2,6 +2,14 @@
 
 ## 📋 Project Overview
 
+## 📖 API Documentation (Swagger / OpenAPI)
+
+After starting the app, access interactive API docs here:
+
+- Swagger UI: http://localhost:9091/swagger-ui/index.html
+- OpenAPI JSON: http://localhost:9091/v3/api-docs
+- OpenAPI YAML: http://localhost:9091/v3/api-docs.yaml
+
 The **User Master Application** is a comprehensive user management system built with Spring Boot that provides enterprise-level user administration capabilities. This application implements JWT-based authentication, role-based access control, and advanced user management features including soft delete, pagination, filtering, and asynchronous processing.
 
 ## 🚀 Key Features
@@ -218,7 +226,9 @@ security.jwt.refresh.header=X-Refresh-Token
 
 4. **Access the application**
    - Base URL: `http://localhost:9091`
-   - API Documentation: `http://localhost:9091/swagger-ui.html` (if configured)
+   - API Documentation (Swagger UI): `http://localhost:9091/swagger-ui/index.html`
+   - OpenAPI JSON: `http://localhost:9091/v3/api-docs`
+   - OpenAPI YAML: `http://localhost:9091/v3/api-docs.yaml`
 
 ## 📝 Usage Examples
 
