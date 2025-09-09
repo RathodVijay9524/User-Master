@@ -5,15 +5,41 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
+
 
 import java.util.List;
 
 @Configuration
 public class CorsConfig {
 
+
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration c = new CorsConfiguration();
+        c.setAllowedOrigins(List.of(
+                "https://codewithvijay.online",
+                "https://www.codewithvijay.online",   // add www if you might open from there
+                "http://localhost:5173"               // Vite dev
+        ));
+        c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        c.setAllowedHeaders(List.of(
+                "Authorization", "Content-Type", "Accept", "Origin",
+                "Cache-Control", "Pragma"
+        ));
+        // Using JWT in Authorization header → cookies not needed:
+        c.setAllowCredentials(false); // set true only if you intentionally use cookies
+        // If you return token in a header and want JS to read it:
+        // c.setExposedHeaders(List.of("Authorization"));
+
+        UrlBasedCorsConfigurationSource src = new UrlBasedCorsConfigurationSource();
+        src.registerCorsConfiguration("/**", c);
+        return src;
+    }
+
+
+}
+
+   /* @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
@@ -26,7 +52,7 @@ public class CorsConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-    }
+    }*/
 
    /* @Bean
     public FilterRegistrationBean<CorsFilter> corsFilter() {

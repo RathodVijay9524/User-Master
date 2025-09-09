@@ -288,7 +288,7 @@ public class AuthServiceImpl implements AuthService {
        /* message = message.replace("[[url]]", url + "/api/v1/home/verify?uid=" + savedUser.getId() + "&&code="
                 + savedUser.getAccountStatus().getVerificationCode());*/
 
-        message = message.replace("[[url]]", "http://localhost:5173/verify?uid=" + savedUser.getId()
+        message = message.replace("[[url]]", "https://codewithvijay.online/verify?uid=" + savedUser.getId()
                 + "&code=" + savedUser.getAccountStatus().getVerificationCode());
 
         EmailForm emailRequest = EmailForm.builder()
@@ -352,7 +352,8 @@ public class AuthServiceImpl implements AuthService {
         String url = CommonUtils.getUrl(request);
 
         // Frontend Base URL
-        String frontendBaseUrl = "http://localhost:5173";
+        //String frontendBaseUrl = "http://localhost:5173";
+        String frontendBaseUrl = "https://codewithvijay.online";
 
         // Send the email with the reset link
         sendEmailRequest(updatedUser, frontendBaseUrl);
