@@ -1,87 +1,74 @@
 package com.vijay.User_Master.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ChatRequest {
     
-    @JsonProperty("message")
     private String message;
-    
-    @JsonProperty("provider")
     private String provider;
-    
-    @JsonProperty("model")
     private String model;
-    
-    @JsonProperty("temperature")
-    private Double temperature = 0.7;
-    
-    @JsonProperty("maxTokens")
-    private Integer maxTokens = 1000;
-    
-    @JsonProperty("conversationId")
+    private Double temperature;
+    private Integer maxTokens;
     private String conversationId;
     
-    // API Keys for dynamic provider configuration (optional)
-    @JsonProperty("openaiApiKey")
+    @JsonProperty("userId")
+    @JsonAlias({"user_id", "user-id", "user"})
+    private String userId;
+    
+    // API Keys for different providers
     private String openaiApiKey;
-    
-    @JsonProperty("claudeApiKey")
     private String claudeApiKey;
-    
-    @JsonProperty("groqApiKey")
     private String groqApiKey;
-    
-    @JsonProperty("geminiApiKey")
     private String geminiApiKey;
-    
-    @JsonProperty("openrouterApiKey")
     private String openrouterApiKey;
-    
-    @JsonProperty("huggingfaceApiKey")
     private String huggingfaceApiKey;
     
-    // Default constructor
-    public ChatRequest() {}
+    // Getters and setters
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
     
-    // Constructor with parameters
-    public ChatRequest(String message, String provider, String model) {
-        this.message = message;
-        this.provider = provider;
-        this.model = model;
-    }
+    public String getProvider() { return provider; }
+    public void setProvider(String provider) { this.provider = provider; }
     
-    // Getters and Setters
-    public String getMessage() {
-        return message;
-    }
+    public String getModel() { return model; }
+    public void setModel(String model) { this.model = model; }
     
-    public void setMessage(String message) {
-        this.message = message;
-    }
+    public Double getTemperature() { return temperature; }
+    public void setTemperature(Double temperature) { this.temperature = temperature; }
     
-    public String getProvider() {
-        return provider;
-    }
+    public Integer getMaxTokens() { return maxTokens; }
+    public void setMaxTokens(Integer maxTokens) { this.maxTokens = maxTokens; }
     
-    public void setProvider(String provider) {
-        this.provider = provider;
-    }
+    public String getConversationId() { return conversationId; }
+    public void setConversationId(String conversationId) { this.conversationId = conversationId; }
     
-    public String getModel() {
-        return model;
-    }
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
     
-    public void setModel(String model) {
-        this.model = model;
-    }
+    public String getOpenaiApiKey() { return openaiApiKey; }
+    public void setOpenaiApiKey(String openaiApiKey) { this.openaiApiKey = openaiApiKey; }
     
-    @Override
-    public String toString() {
-        return "ChatRequest{" +
-                "message='" + message + '\'' +
-                ", provider='" + provider + '\'' +
-                ", model='" + model + '\'' +
-                '}';
-    }
+    public String getClaudeApiKey() { return claudeApiKey; }
+    public void setClaudeApiKey(String claudeApiKey) { this.claudeApiKey = claudeApiKey; }
+    
+    public String getGroqApiKey() { return groqApiKey; }
+    public void setGroqApiKey(String groqApiKey) { this.groqApiKey = groqApiKey; }
+    
+    public String getGeminiApiKey() { return geminiApiKey; }
+    public void setGeminiApiKey(String geminiApiKey) { this.geminiApiKey = geminiApiKey; }
+    
+    public String getOpenrouterApiKey() { return openrouterApiKey; }
+    public void setOpenrouterApiKey(String openrouterApiKey) { this.openrouterApiKey = openrouterApiKey; }
+    
+    public String getHuggingfaceApiKey() { return huggingfaceApiKey; }
+    public void setHuggingfaceApiKey(String huggingfaceApiKey) { this.huggingfaceApiKey = huggingfaceApiKey; }
 }

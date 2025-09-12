@@ -36,9 +36,16 @@ public class ChatIntegrationController {
         logger.info("Received chat message request: {}", request);
         
         try {
+            // Auto-populate userId from JWT token if not provided
+            if (request.getUserId() == null || request.getUserId().isEmpty()) {
+                // TODO: Extract userId from JWT token
+                logger.warn("No userId provided in request, using default");
+            }
+            
             ChatResponse response = chatIntegrationService.sendMessage(request);
             logger.info("Successfully processed chat message request");
             return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
             logger.error("Error processing chat message request: {}", e.getMessage());
             return ResponseEntity.internalServerError().build();
@@ -57,6 +64,7 @@ public class ChatIntegrationController {
             List<ProviderInfo> providers = chatIntegrationService.getProviders();
             logger.info("Successfully fetched {} providers", providers.size());
             return ResponseEntity.ok(providers);
+            
         } catch (Exception e) {
             logger.error("Error fetching providers: {}", e.getMessage());
             return ResponseEntity.internalServerError().build();
@@ -75,14 +83,70 @@ public class ChatIntegrationController {
             List<String> models = chatIntegrationService.getModelsForProvider(providerName);
             logger.info("Successfully fetched {} models for provider {}", models.size(), providerName);
             return ResponseEntity.ok(models);
+            
         } catch (Exception e) {
             logger.error("Error fetching models for provider {}: {}", providerName, e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
     
-    // Async endpoints for better performance (optional)
+    /**
+     * Get user's chat list/conversations
+     */
+    @GetMapping("/users/{userId}/chats")
+    public ResponseEntity<List<Object>> getUserChatList(@PathVariable String userId) {
+        logger.info("Received request to fetch chat list for user: {}", userId);
+        
+        try {
+            List<Object> chats = chatIntegrationService.getUserChatList(userId);
+            logger.info("Successfully fetched {} chats for user {}", chats.size(), userId);
+            return ResponseEntity.ok(chats);
+            
+        } catch (Exception e) {
+            logger.error("Error fetching chat list for user {}: {}", userId, e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
     
+    /**
+     * Get messages for a specific conversation
+     */
+    @GetMapping("/users/{userId}/conversations/{conversationId}/messages")
+    public ResponseEntity<List<Object>> getConversationMessages(
+            @PathVariable String userId, 
+            @PathVariable String conversationId) {
+        logger.info("Received request to fetch messages for conversation: {} of user: {}", conversationId, userId);
+        
+        try {
+            List<Object> messages = chatIntegrationService.getConversationMessages(userId, conversationId);
+            logger.info("Successfully fetched {} messages for conversation {}", messages.size(), conversationId);
+            return ResponseEntity.ok(messages);
+            
+        } catch (Exception e) {
+            logger.error("Error fetching messages for conversation {}: {}", conversationId, e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    /**
+     * Get user's chat statistics
+     */
+    @GetMapping("/users/{userId}/stats")
+    public ResponseEntity<Object> getUserChatStats(@PathVariable String userId) {
+        logger.info("Received request to fetch chat stats for user: {}", userId);
+        
+        try {
+            Object stats = chatIntegrationService.getUserChatStats(userId);
+            logger.info("Successfully fetched chat stats for user {}", userId);
+            return ResponseEntity.ok(stats);
+            
+        } catch (Exception e) {
+            logger.error("Error fetching chat stats for user {}: {}", userId, e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    // Async endpoints for better performance (optional)
     /**
      * Async version of sendMessage
      */

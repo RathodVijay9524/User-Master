@@ -5,16 +5,14 @@ import com.vijay.User_Master.dto.ChatResponse;
 import com.vijay.User_Master.dto.ProviderInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
 
+import java.time.Duration;
 import java.util.List;
 
 @Service
@@ -22,148 +20,200 @@ public class ChatIntegrationService {
     
     private static final Logger logger = LoggerFactory.getLogger(ChatIntegrationService.class);
     
-    private final WebClient chatServiceWebClient;
+    private final WebClient webClient;
     
-    @Autowired
-    public ChatIntegrationService(WebClient chatServiceWebClient) {
-        this.chatServiceWebClient = chatServiceWebClient;
+    @Value("${chat.service.base-url:http://localhost:8080}")
+    private String chatServiceBaseUrl;
+    
+    @Value("${chat.service.timeout:30}")
+    private int timeoutSeconds;
+    
+    public ChatIntegrationService() {
+        this.webClient = WebClient.builder()
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
     }
     
     /**
      * Send a message to the chat service
-     * @param chatRequest The chat request containing message, provider, and model
-     * @return ChatResponse from the chat service
      */
-    public ChatResponse sendMessage(ChatRequest chatRequest) {
-        logger.info("Sending message to chat service: {}", chatRequest);
+    public ChatResponse sendMessage(ChatRequest request) {
+        logger.info("Forwarding chat message to chat service: {}", request.getMessage());
         
         try {
-            return chatServiceWebClient
-                    .post()
-                    .uri("/api/chat/message")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(chatRequest)
+            ChatResponse response = webClient.post()
+                    .uri(chatServiceBaseUrl + "/api/chat/message")
+                    .bodyValue(request)
                     .retrieve()
                     .bodyToMono(ChatResponse.class)
-                    .doOnSuccess(response -> logger.info("Successfully received response from chat service"))
-                    .doOnError(error -> logger.error("Error calling chat service: {}", error.getMessage()))
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
                     .block();
-                    
-        } catch (WebClientResponseException e) {
-            logger.error("HTTP error calling chat service: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new RuntimeException("Failed to send message to chat service: " + e.getMessage(), e);
+            
+            logger.info("Successfully received response from chat service");
+            return response;
+            
         } catch (Exception e) {
-            logger.error("Unexpected error calling chat service: {}", e.getMessage());
-            throw new RuntimeException("Failed to send message to chat service: " + e.getMessage(), e);
+            logger.error("Error communicating with chat service: {}", e.getMessage());
+            return ChatResponse.builder()
+                    .error("Failed to communicate with chat service: " + e.getMessage())
+                    .build();
         }
     }
     
     /**
      * Get all available providers from the chat service
-     * @return List of ProviderInfo
      */
     public List<ProviderInfo> getProviders() {
         logger.info("Fetching providers from chat service");
         
         try {
-            return chatServiceWebClient
-                    .get()
-                    .uri("/api/chat/providers")
-                    .accept(MediaType.APPLICATION_JSON)
+            List<ProviderInfo> providers = webClient.get()
+                    .uri(chatServiceBaseUrl + "/api/chat/providers")
                     .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<List<ProviderInfo>>() {})
-                    .doOnSuccess(providers -> logger.info("Successfully fetched {} providers", providers.size()))
-                    .doOnError(error -> logger.error("Error fetching providers: {}", error.getMessage()))
+                    .bodyToFlux(ProviderInfo.class)
+                    .collectList()
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
                     .block();
-                    
-        } catch (WebClientResponseException e) {
-            logger.error("HTTP error fetching providers: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new RuntimeException("Failed to fetch providers from chat service: " + e.getMessage(), e);
+            
+            logger.info("Successfully fetched {} providers from chat service", providers.size());
+            return providers;
+            
         } catch (Exception e) {
-            logger.error("Unexpected error fetching providers: {}", e.getMessage());
-            throw new RuntimeException("Failed to fetch providers from chat service: " + e.getMessage(), e);
+            logger.error("Error fetching providers from chat service: {}", e.getMessage());
+            return List.of();
         }
     }
     
     /**
      * Get models for a specific provider from the chat service
-     * @param providerName The name of the provider
-     * @return List of model names
      */
     public List<String> getModelsForProvider(String providerName) {
-        logger.info("Fetching models for provider: {}", providerName);
+        logger.info("Fetching models for provider: {} from chat service", providerName);
         
         try {
-            return chatServiceWebClient
-                    .get()
-                    .uri("/api/chat/providers/{providerName}/models", providerName)
-                    .accept(MediaType.APPLICATION_JSON)
+            List<String> models = webClient.get()
+                    .uri(chatServiceBaseUrl + "/api/chat/providers/" + providerName + "/models")
                     .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<List<String>>() {})
-                    .doOnSuccess(models -> logger.info("Successfully fetched {} models for provider {}", models.size(), providerName))
-                    .doOnError(error -> logger.error("Error fetching models for provider {}: {}", providerName, error.getMessage()))
+                    .bodyToFlux(String.class)
+                    .collectList()
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
                     .block();
-                    
-        } catch (WebClientResponseException e) {
-            logger.error("HTTP error fetching models for provider {}: {} - {}", providerName, e.getStatusCode(), e.getResponseBodyAsString());
-            throw new RuntimeException("Failed to fetch models for provider " + providerName + ": " + e.getMessage(), e);
+            
+            logger.info("Successfully fetched {} models for provider {}", models.size(), providerName);
+            return models;
+            
         } catch (Exception e) {
-            logger.error("Unexpected error fetching models for provider {}: {}", providerName, e.getMessage());
-            throw new RuntimeException("Failed to fetch models for provider " + providerName + ": " + e.getMessage(), e);
+            logger.error("Error fetching models for provider {} from chat service: {}", providerName, e.getMessage());
+            return List.of();
         }
     }
     
     /**
-     * Async version of sendMessage for non-blocking operations
-     * @param chatRequest The chat request
-     * @return Mono<ChatResponse>
+     * Get user's chat list from the chat service
      */
-    public Mono<ChatResponse> sendMessageAsync(ChatRequest chatRequest) {
-        logger.info("Sending message to chat service asynchronously: {}", chatRequest);
+    public List<Object> getUserChatList(String userId) {
+        logger.info("Fetching chat list for user: {} from chat service", userId);
         
-        return chatServiceWebClient
-                .post()
-                .uri("/api/chat/message")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(chatRequest)
+        try {
+            // Parse the response as a List of Objects (conversations)
+            List<Object> chats = webClient.get()
+                    .uri(chatServiceBaseUrl + "/api/chat/users/" + userId + "/chats")
+                    .retrieve()
+                    .bodyToMono(List.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .onErrorReturn(List.of()) // Return empty list on error
+                    .block();
+            
+            if (chats == null) {
+                chats = List.of();
+            }
+            
+            logger.info("Successfully fetched {} chats for user {}", chats.size(), userId);
+            return chats;
+            
+        } catch (Exception e) {
+            logger.error("Error fetching chat list for user {} from chat service: {}", userId, e.getMessage());
+            return List.of();
+        }
+    }
+    
+    /**
+     * Get conversation messages from the chat service
+     */
+    public List<Object> getConversationMessages(String userId, String conversationId) {
+        logger.info("Fetching messages for conversation: {} of user: {} from chat service", conversationId, userId);
+        
+        try {
+            // Parse the response as a List of Objects (messages)
+            List<Object> messages = webClient.get()
+                    .uri(chatServiceBaseUrl + "/api/chat/users/" + userId + "/conversations/" + conversationId + "/messages")
+                    .retrieve()
+                    .bodyToMono(List.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .onErrorReturn(List.of()) // Return empty list on error
+                    .block();
+            
+            if (messages == null) {
+                messages = List.of();
+            }
+            
+            logger.info("Successfully fetched {} messages for conversation {}", messages.size(), conversationId);
+            return messages;
+            
+        } catch (Exception e) {
+            logger.error("Error fetching messages for conversation {} from chat service: {}", conversationId, e.getMessage());
+            return List.of();
+        }
+    }
+    
+    /**
+     * Get user's chat statistics from the chat service
+     */
+    public Object getUserChatStats(String userId) {
+        logger.info("Fetching chat stats for user: {} from chat service", userId);
+        
+        try {
+            Object stats = webClient.get()
+                    .uri(chatServiceBaseUrl + "/api/chat/users/" + userId + "/stats")
+                    .retrieve()
+                    .bodyToMono(Object.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .block();
+            
+            logger.info("Successfully fetched chat stats for user {}", userId);
+            return stats;
+            
+        } catch (Exception e) {
+            logger.error("Error fetching chat stats for user {} from chat service: {}", userId, e.getMessage());
+            return null;
+        }
+    }
+    
+    // Async versions for better performance
+    public Mono<ChatResponse> sendMessageAsync(ChatRequest request) {
+        return webClient.post()
+                .uri(chatServiceBaseUrl + "/api/chat/message")
+                .bodyValue(request)
                 .retrieve()
                 .bodyToMono(ChatResponse.class)
-                .doOnSuccess(response -> logger.info("Successfully received async response from chat service"))
-                .doOnError(error -> logger.error("Error in async call to chat service: {}", error.getMessage()));
+                .timeout(Duration.ofSeconds(timeoutSeconds));
     }
     
-    /**
-     * Async version of getProviders for non-blocking operations
-     * @return Mono<List<ProviderInfo>>
-     */
     public Mono<List<ProviderInfo>> getProvidersAsync() {
-        logger.info("Fetching providers from chat service asynchronously");
-        
-        return chatServiceWebClient
-                .get()
-                .uri("/api/chat/providers")
-                .accept(MediaType.APPLICATION_JSON)
+        return webClient.get()
+                .uri(chatServiceBaseUrl + "/api/chat/providers")
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<List<ProviderInfo>>() {})
-                .doOnSuccess(providers -> logger.info("Successfully fetched {} providers asynchronously", providers.size()))
-                .doOnError(error -> logger.error("Error fetching providers asynchronously: {}", error.getMessage()));
+                .bodyToFlux(ProviderInfo.class)
+                .collectList()
+                .timeout(Duration.ofSeconds(timeoutSeconds));
     }
     
-    /**
-     * Async version of getModelsForProvider for non-blocking operations
-     * @param providerName The name of the provider
-     * @return Mono<List<String>>
-     */
     public Mono<List<String>> getModelsForProviderAsync(String providerName) {
-        logger.info("Fetching models for provider asynchronously: {}", providerName);
-        
-        return chatServiceWebClient
-                .get()
-                .uri("/api/chat/providers/{providerName}/models", providerName)
-                .accept(MediaType.APPLICATION_JSON)
+        return webClient.get()
+                .uri(chatServiceBaseUrl + "/api/chat/providers/" + providerName + "/models")
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<List<String>>() {})
-                .doOnSuccess(models -> logger.info("Successfully fetched {} models for provider {} asynchronously", models.size(), providerName))
-                .doOnError(error -> logger.error("Error fetching models for provider {} asynchronously: {}", providerName, error.getMessage()));
+                .bodyToFlux(String.class)
+                .collectList()
+                .timeout(Duration.ofSeconds(timeoutSeconds));
     }
 }
