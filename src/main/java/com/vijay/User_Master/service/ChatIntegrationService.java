@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ChatIntegrationService {
@@ -48,7 +49,7 @@ public class ChatIntegrationService {
                     .bodyToMono(ChatResponse.class)
                     .timeout(Duration.ofSeconds(timeoutSeconds))
                     .block();
-            
+                    
             logger.info("Successfully received response from chat service");
             return response;
             
@@ -74,7 +75,7 @@ public class ChatIntegrationService {
                     .collectList()
                     .timeout(Duration.ofSeconds(timeoutSeconds))
                     .block();
-            
+                    
             logger.info("Successfully fetched {} providers from chat service", providers.size());
             return providers;
             
@@ -152,7 +153,7 @@ public class ChatIntegrationService {
                     .timeout(Duration.ofSeconds(timeoutSeconds))
                     .onErrorReturn(List.of()) // Return empty list on error
                     .block();
-            
+                    
             if (messages == null) {
                 messages = List.of();
             }
@@ -215,5 +216,215 @@ public class ChatIntegrationService {
                 .bodyToFlux(String.class)
                 .collectList()
                 .timeout(Duration.ofSeconds(timeoutSeconds));
+    }
+    
+    // MCP Server Integration Methods
+    
+    /**
+     * Get all available MCP tools from chat service
+     */
+    public Map<String, Object> getMcpTools() {
+        logger.info("Fetching MCP tools from chat service");
+        
+        try {
+            Map<String, Object> response = webClient.get()
+                    .uri(chatServiceBaseUrl + "/api/mcp-servers/tools")
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .block();
+            
+            logger.info("Successfully fetched MCP tools from chat service");
+            return response != null ? response : Map.of("tools", List.of(), "count", 0);
+            
+        } catch (Exception e) {
+            logger.error("Error fetching MCP tools from chat service: {}", e.getMessage());
+            return Map.of("error", e.getMessage(), "tools", List.of(), "count", 0);
+        }
+    }
+    
+    /**
+     * Get MCP injection status from chat service
+     */
+    public Map<String, Object> getMcpInjectionStatus() {
+        logger.info("Fetching MCP injection status from chat service");
+        
+        try {
+            Map<String, Object> response = webClient.get()
+                    .uri(chatServiceBaseUrl + "/api/mcp-servers/injection-status")
+                .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .block();
+            
+            logger.info("Successfully fetched MCP injection status from chat service");
+            return response != null ? response : Map.of("injectionStatus", "unknown");
+            
+        } catch (Exception e) {
+            logger.error("Error fetching MCP injection status from chat service: {}", e.getMessage());
+            return Map.of("error", e.getMessage(), "injectionStatus", "error");
+        }
+    }
+    
+    /**
+     * Start a specific MCP server
+     */
+    public Map<String, Object> startMcpServer(String serverId) {
+        logger.info("Starting MCP server: {} via chat service", serverId);
+        
+        try {
+            Map<String, Object> response = webClient.post()
+                    .uri(chatServiceBaseUrl + "/api/mcp-servers/" + serverId + "/start")
+                .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .block();
+            
+            logger.info("Successfully started MCP server: {}", serverId);
+            return response != null ? response : Map.of("success", false, "message", "Unknown response");
+            
+        } catch (Exception e) {
+            logger.error("Error starting MCP server {} via chat service: {}", serverId, e.getMessage());
+            return Map.of("success", false, "message", e.getMessage());
+        }
+    }
+    
+    /**
+     * Stop a specific MCP server
+     */
+    public Map<String, Object> stopMcpServer(String serverId) {
+        logger.info("Stopping MCP server: {} via chat service", serverId);
+        
+        try {
+            Map<String, Object> response = webClient.post()
+                    .uri(chatServiceBaseUrl + "/api/mcp-servers/" + serverId + "/stop")
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .block();
+            
+            logger.info("Successfully stopped MCP server: {}", serverId);
+            return response != null ? response : Map.of("success", false, "message", "Unknown response");
+            
+        } catch (Exception e) {
+            logger.error("Error stopping MCP server {} via chat service: {}", serverId, e.getMessage());
+            return Map.of("success", false, "message", e.getMessage());
+        }
+    }
+    
+    /**
+     * Get tools for a specific MCP server
+     */
+    public Map<String, Object> getMcpServerTools(String serverId) {
+        logger.info("Fetching tools for MCP server: {} from chat service", serverId);
+        
+        try {
+            Map<String, Object> response = webClient.get()
+                    .uri(chatServiceBaseUrl + "/api/mcp-servers/" + serverId + "/tools")
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .block();
+            
+            logger.info("Successfully fetched tools for MCP server: {}", serverId);
+            return response != null ? response : Map.of("tools", List.of(), "count", 0);
+            
+        } catch (Exception e) {
+            logger.error("Error fetching tools for MCP server {} from chat service: {}", serverId, e.getMessage());
+            return Map.of("error", e.getMessage(), "tools", List.of(), "count", 0);
+        }
+    }
+    
+    /**
+     * Get all MCP servers
+     */
+    public Object getAllMcpServers() {
+        logger.info("Fetching all MCP servers from chat service");
+        
+        try {
+            Object response = webClient.get()
+                    .uri(chatServiceBaseUrl + "/api/mcp-servers")
+                    .retrieve()
+                    .bodyToMono(Object.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .block();
+            
+            logger.info("Successfully fetched all MCP servers from chat service");
+            return response != null ? response : List.of();
+            
+        } catch (Exception e) {
+            logger.error("Error fetching all MCP servers from chat service: {}", e.getMessage());
+            return List.of();
+        }
+    }
+    
+    /**
+     * Add a new MCP server
+     */
+    public Map<String, Object> addMcpServer(Map<String, Object> serverConfig) {
+        logger.info("Adding MCP server via chat service");
+        
+        try {
+            Map<String, Object> response = webClient.post()
+                    .uri(chatServiceBaseUrl + "/api/mcp-servers")
+                    .bodyValue(serverConfig)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .block();
+            
+            logger.info("Successfully added MCP server via chat service");
+            return response != null ? response : Map.of("success", false, "message", "Unknown response");
+            
+        } catch (Exception e) {
+            logger.error("Error adding MCP server via chat service: {}", e.getMessage());
+            return Map.of("success", false, "message", e.getMessage());
+        }
+    }
+    
+    /**
+     * Remove a MCP server
+     */
+    public Map<String, Object> removeMcpServer(String serverId) {
+        logger.info("Removing MCP server: {} via chat service", serverId);
+        
+        try {
+            Map<String, Object> response = webClient.delete()
+                    .uri(chatServiceBaseUrl + "/api/mcp-servers/" + serverId)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .block();
+            
+            logger.info("Successfully removed MCP server: {}", serverId);
+            return response != null ? response : Map.of("success", false, "message", "Unknown response");
+            
+        } catch (Exception e) {
+            logger.error("Error removing MCP server {} via chat service: {}", serverId, e.getMessage());
+            return Map.of("success", false, "message", e.getMessage());
+        }
+    }
+    
+    /**
+     * Refresh tool cache for a specific MCP server
+     */
+    public Map<String, Object> refreshMcpToolCache(String serverId) {
+        logger.info("Refreshing tool cache for MCP server: {} via chat service", serverId);
+        
+        try {
+            Map<String, Object> response = webClient.post()
+                    .uri(chatServiceBaseUrl + "/api/mcp-servers/" + serverId + "/refresh-cache")
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .block();
+            
+            logger.info("Successfully refreshed tool cache for MCP server: {}", serverId);
+            return response != null ? response : Map.of("success", false, "message", "Unknown response");
+            
+        } catch (Exception e) {
+            logger.error("Error refreshing tool cache for MCP server {} via chat service: {}", serverId, e.getMessage());
+            return Map.of("success", false, "message", e.getMessage());
+        }
     }
 }

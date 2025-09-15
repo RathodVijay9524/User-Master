@@ -72,8 +72,11 @@ public class WebSecurityConfig {
                                 "/swagger-ui.html",
                                 "/swagger-ui/**"
                         ).permitAll()
+                        
+                        // 4) MCP endpoints - explicit patterns
+                        .requestMatchers("/api/mcp-servers/**").permitAll()
 
-                        // 4) Everything else needs JWT
+                        // 5) Everything else needs JWT
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
