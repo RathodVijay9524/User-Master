@@ -336,9 +336,9 @@ public class ChatIntegrationService {
     }
     
     /**
-     * Get all MCP servers
+     * Get all MCP servers (simple list)
      */
-    public Object getAllMcpServers() {
+    public Object getAllMcpServersSimple() {
         logger.info("Fetching all MCP servers from chat service");
         
         try {
@@ -425,6 +425,40 @@ public class ChatIntegrationService {
         } catch (Exception e) {
             logger.error("Error refreshing tool cache for MCP server {} via chat service: {}", serverId, e.getMessage());
             return Map.of("success", false, "message", e.getMessage());
+        }
+    }
+
+    public Map<String, Object> getAllMcpServers() {
+        logger.info("Fetching all MCP servers via chat service");
+        try {
+            Map<String, Object> response = webClient.get()
+                    .uri(chatServiceBaseUrl + "/api/mcp-servers/servers")
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .block();
+            logger.info("Successfully fetched all MCP servers");
+            return response != null ? response : Map.of("servers", List.of(), "totalCount", 0);
+        } catch (Exception e) {
+            logger.error("Error fetching all MCP servers via chat service: {}", e.getMessage());
+            return Map.of("servers", List.of(), "totalCount", 0, "error", e.getMessage());
+        }
+    }
+
+    public Map<String, Object> getMcpServerStatus(String serverId) {
+        logger.info("Fetching status for MCP server: {} via chat service", serverId);
+        try {
+            Map<String, Object> response = webClient.get()
+                    .uri(chatServiceBaseUrl + "/api/mcp-servers/" + serverId + "/status")
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .block();
+            logger.info("Successfully fetched status for MCP server: {}", serverId);
+            return response != null ? response : Map.of("serverId", serverId, "status", "UNKNOWN");
+        } catch (Exception e) {
+            logger.error("Error fetching status for MCP server {} via chat service: {}", serverId, e.getMessage());
+            return Map.of("serverId", serverId, "status", "ERROR", "error", e.getMessage());
         }
     }
 }

@@ -102,13 +102,13 @@ public class McpIntegrationController {
     }
 
     /**
-     * Get all MCP servers
+     * Get all MCP servers (simple list)
      */
     @GetMapping
-    public ResponseEntity<Object> getAllServers() {
+    public ResponseEntity<Object> getAllServersSimple() {
         logger.info("Received request to fetch all MCP servers");
         try {
-            Object response = chatIntegrationService.getAllMcpServers();
+            Object response = chatIntegrationService.getAllMcpServersSimple();
             logger.info("Successfully fetched all MCP servers");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -162,6 +162,32 @@ public class McpIntegrationController {
         } catch (Exception e) {
             logger.error("Error refreshing tool cache for MCP server {}: {}", serverId, e.getMessage());
             return ResponseEntity.internalServerError().body(Map.of("message", "Error refreshing tool cache: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/servers")
+    public ResponseEntity<Map<String, Object>> getAllServers() {
+        logger.info("Received request to fetch all MCP servers");
+        try {
+            Map<String, Object> response = chatIntegrationService.getAllMcpServers();
+            logger.info("Successfully fetched all MCP servers");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error fetching all MCP servers: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("message", "Error fetching servers: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{serverId}/status")
+    public ResponseEntity<Map<String, Object>> getServerStatus(@PathVariable String serverId) {
+        logger.info("Received request to get status for MCP server: {}", serverId);
+        try {
+            Map<String, Object> response = chatIntegrationService.getMcpServerStatus(serverId);
+            logger.info("Successfully fetched status for MCP server: {}", serverId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error fetching status for MCP server {}: {}", serverId, e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("message", "Error fetching server status: " + e.getMessage()));
         }
     }
 }
