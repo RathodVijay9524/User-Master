@@ -61,9 +61,6 @@ public class WebSecurityConfig {
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/login", "/signin",
-                                "/api/chat/message",
-                                "/api/chat/providers",
-                                "/api/chat/providers/{providerName}/models",
                                 "/api/auth/register/**",
                                 "/api/v1/home/**",
                                 "/api/v1/tokens/**",
@@ -72,11 +69,7 @@ public class WebSecurityConfig {
                                 "/swagger-ui.html",
                                 "/swagger-ui/**"
                         ).permitAll()
-                        
-                        // 4) MCP endpoints - explicit patterns
-                        .requestMatchers("/api/mcp-servers/**").permitAll()
-
-                        // 5) Everything else needs JWT
+                        // Require authentication for all other endpoints
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
